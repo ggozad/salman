@@ -1834,6 +1834,20 @@ files = [
 ]
 
 [[package]]
+name = "nats-py"
+version = "2.2.0"
+description = "NATS client for Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "nats-py-2.2.0.tar.gz", hash = "sha256:e45a0bafde2d04fb2d2bd6b0527b95bc77f371beaf7b6237354be0234ff9bba9"},
+]
+
+[package.extras]
+nkeys = ["nkeys"]
+
+[[package]]
 name = "networkx"
 version = "2.8.8"
 description = "Python package for creating and manipulating graphs and networks"
@@ -4184,4 +4198,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "28219a279d02543d32c2a533af71a028f048abb81a94d6b4cf96efd9631efeef"
+content-hash = "e94731242284885c40afaf523e8a992a1a2615e0cf819de6f75d78cc0a1e602d"

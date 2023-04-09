@@ -27,3 +27,7 @@ def agent():
             break
         resp = agent.run(q)
         print(resp)
+
+
+if __name__ == "__main__":
+    app()

@@ -20,6 +20,7 @@ openai-whisper = {git = "https://github.com/openai/whisper.git"}
 pydub = "^0.25.1"
 hmmlearn = {git = "https://github.com/hmmlearn/hmmlearn.git"}
 pyannote-audio = "^2.1.1"
+nats-py = "^2.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -30,6 +31,7 @@ pytest = "^7.3.0"
 
 [tool.poetry.scripts]
 prompt = "salman.cli.prompt:app"
+workers = "salman.cli.workers:app"
 
 [build-system]
 requires = ["poetry-core"]
