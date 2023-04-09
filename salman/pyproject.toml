@@ -12,12 +12,21 @@ python-dotenv = "^1.0.0"
 typer = {version = "^0.7.0", extras = ["all"]}
 anthropic = "^0.2.6"
 google-search-results = "^2.4.2"
+llvmlite = "^0.39.1"
+torch = "1.13.1"
+numba = "^0.56.4"
+torchaudio = "0.13.1"
+openai-whisper = {git = "https://github.com/openai/whisper.git"}
+pydub = "^0.25.1"
+hmmlearn = {git = "https://github.com/hmmlearn/hmmlearn.git"}
+pyannote-audio = "^2.1.1"
 
 
 [tool.poetry.group.dev.dependencies]
 pdbpp = "^0.10.3"
 ruff = "^0.0.261"
 black = "^23.3.0"
+pytest = "^7.3.0"
 
 [tool.poetry.scripts]
 prompt = "salman.cli.prompt:app"
@@ -25,6 +34,12 @@ prompt = "salman.cli.prompt:app"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "-rP --disable-warnings"
+testpaths = [
+    "tests",
+]
 
 [tool.black]
 line-length = 88
