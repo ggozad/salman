@@ -18,7 +18,7 @@ def _parse_bool(val: Union[str, bool]) -> bool:
 # AppConfig class with required fields, default values, type checking, and typecasting for int and bool values
 class AppConfig:
     ENV: str = "development"
-
+    ANTHROPIC_API_KEY: str
     """
     Map environment variables to class fields according to these rules:
       - Field won't be parsed unless it has a type annotation

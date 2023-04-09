@@ -10,6 +10,7 @@ python = "^3.10"
 langchain = "^0.0.135"
 python-dotenv = "^1.0.0"
 typer = {version = "^0.7.0", extras = ["all"]}
+anthropic = "^0.2.6"
 
 
 [tool.poetry.group.dev.dependencies]
