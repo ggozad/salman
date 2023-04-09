@@ -1,19 +1,24 @@
+from langchain import LLMChain, PromptTemplate
 from langchain.llms import Anthropic
-from langchain import PromptTemplate, LLMChain
+from langchain.memory import ConversationBufferWindowMemory
 
 from salman.config import Config
 
 llm = Anthropic(anthropic_api_key=Config.ANTHROPIC_API_KEY)
-template = """Question: {question}
+template = """
+{chat_history}
 
-Answer: Let's think step by step."""
+Human: {question}
 
-prompt = PromptTemplate(template=template, input_variables=["question"])
-llm_chain = LLMChain(prompt=prompt, llm=llm)
+Assistant: Can I think step-by-step?
 
-template = """Question: {question}
+Human: Yes, please do.
 
-Answer: Let's think step by step."""
+Assistant:"""
 
-prompt = PromptTemplate(template=template, input_variables=["question"])
-bot = LLMChain(prompt=prompt, llm=llm)
+
+prompt = PromptTemplate(template=template, input_variables=["question", "chat_history"])
+memory = ConversationBufferWindowMemory(memory_key="chat_history", k=3)
+
+
+bot = LLMChain(prompt=prompt, llm=llm, memory=memory)
