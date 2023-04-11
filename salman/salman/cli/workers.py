@@ -1,36 +1,21 @@
 import asyncio
+from pathlib import Path
 
 import typer
 
-from salman.nats.workers import subscribe as _subscribe
-from salman.nats.workers import publish as _publish
+from salman.workers.voice import post_blob
 
 app = typer.Typer()
 
 
 @app.command()
-def subscribe(stream: str, subject: str, queue: str = None):
-    async def cb(msg):
-        print(msg)
-        await msg.ack()
+def add_blob(file: str = typer.Argument(..., help="The file to add to the queue")):
+    """Add a blob to the queue."""
+    blob = Path(file)
+    data = blob.read_bytes()
+    # post_blob(blob.name, 0, data)
 
-    async def _main():
-        await _subscribe(stream, subject, cb, queue=queue)
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(_main())
-    loop.run_forever()
-    loop.close()
-
-
-@app.command()
-def publish(subject: str, body: str):
-    async def _main():
-        await _publish(subject, body)
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(_main())
-    loop.close()
+    asyncio.run(post_blob("conv_id", 0, data))
 
 
 if __name__ == "__main__":
