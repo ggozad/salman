@@ -52,5 +52,8 @@ class NATSManager:
     async def publish(self, subject: str, data: bytes, stream: str = None) -> PubAck:
         return await self._js.publish(subject, data, stream=stream)
 
-    async def get_kv_bucket(self, name: str) -> KeyValue:
-        return await self._js.create_key_value(bucket=name)
+    async def get_kv_bucket(self, bucket: str) -> KeyValue:
+        return await self._js.create_key_value(bucket=bucket)
+
+    async def delete_kv_bucket(self, bucket: str) -> bool:
+        return await self._js.delete_key_value(bucket=bucket)

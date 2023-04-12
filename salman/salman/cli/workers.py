@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from salman.workers.voice import post_blob, conversation_handler, end_recording
+from salman.workers.voice import recording_handler, end_recording, post_blob
 
 app = typer.Typer()
 
@@ -26,7 +26,7 @@ def add_blob(
 @app.command()
 def conversation_worker():
     """Add a blob to the queue."""
-    asyncio.run(conversation_handler())
+    asyncio.run(recording_handler())
 
 
 if __name__ == "__main__":
