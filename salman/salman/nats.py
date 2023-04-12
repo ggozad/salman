@@ -4,7 +4,7 @@ from typing import List
 
 import nats
 from nats.js.api import PubAck, StreamInfo
-from nats.js.client import JetStreamContext
+from nats.js.client import Callback, JetStreamContext
 from nats.js.kv import KeyValue
 
 
@@ -43,7 +43,7 @@ class NATSManager:
         return await self._js.add_stream(name=name, subjects=subjects)
 
     async def subscribe(
-        self, stream: str, subject: str, cb: callable, queue: str = None
+        self, stream: str, subject: str, cb: Callback, queue: str = None
     ) -> JetStreamContext.PushSubscription:
         return await self._js.subscribe(
             subject, cb=cb, stream=stream, queue=queue, manual_ack=True
