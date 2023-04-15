@@ -28,6 +28,7 @@ pdbpp = "^0.10.3"
 ruff = "^0.0.261"
 black = "^23.3.0"
 pytest = "^7.3.0"
+pytest-asyncio = "^0.21.0"
 
 [tool.poetry.scripts]
 prompt = "salman.cli.prompt:app"

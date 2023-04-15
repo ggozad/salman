@@ -1,7 +1,9 @@
 import re
 from pathlib import Path
 
+import nats
 import pytest
+import pytest_asyncio
 
 import salman
 
@@ -19,3 +21,15 @@ def get_test_blobs(request):
         with open(blob, "rb") as f:
             blobs.append(f.read())
     return blobs
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def cleanup_streams():
+    nc = await nats.connect("nats://localhost:4222")
+    js = nc.jetstream()
+    await js.delete_stream("test_stream")
+
+    yield
+
+    await js.delete_stream("test_stream")
+    await nc.close()
