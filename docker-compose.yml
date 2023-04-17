@@ -7,3 +7,5 @@ services:
       - "6222:6222"
       - "8222:8222"
     command: -js
+    volumes:
+      - ./volumes/nats:/tmp/nats/jetstream
