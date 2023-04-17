@@ -6,6 +6,7 @@ import pytest
 import pytest_asyncio
 
 import salman
+from salman.nats import NATSManager
 
 
 @pytest.fixture(scope="function")
@@ -25,11 +26,10 @@ def get_test_blobs(request):
 
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_streams():
-    nc = await nats.connect("nats://localhost:4222")
-    js = nc.jetstream()
-    await js.delete_stream("test_stream")
+    mgr = await NATSManager().create()
+    await mgr.delete_stream("test_stream")
 
     yield
 
-    await js.delete_stream("test_stream")
-    await nc.close()
+    await mgr.delete_stream("test_stream")
+    await mgr.stop()

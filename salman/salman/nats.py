@@ -22,7 +22,10 @@ class NATSManager:
         return self
 
     async def run_forever(self) -> None:
-        await self._done
+        try:
+            await self._done
+        except asyncio.CancelledError:
+            await self._nc.close()
 
     async def stop(self) -> None:
         await self._nc.close()
