@@ -20,6 +20,7 @@ class AppConfig:
     ENV: str = "development"
     ANTHROPIC_API_KEY: str
     NATS_URL: str = "localhost"
+    VOICE_STREAM: str = "voice"
     """
     Map environment variables to class fields according to these rules:
       - Field won't be parsed unless it has a type annotation

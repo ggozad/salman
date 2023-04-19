@@ -3,10 +3,10 @@ from json import dumps
 
 from pydub import AudioSegment
 
+from salman.config import Config
 from salman.nats import NATSManager
 from salman.voice.detection import VoiceDetector
 
-STREAM = "voice"
 SUBJECTS = [
     "blobs.*.*",
     "segments.*.*",
@@ -21,20 +21,19 @@ QUEUE = "voice"
 async def post_blob(recording_id: str, index: int, blob: bytes):
     """Post a blob to the queue."""
     mgr = await NATSManager.create()
-    await mgr.add_stream(STREAM, SUBJECTS)
     blob_bucket = await mgr.get_kv_bucket(f"blobs-{recording_id}")
     await blob_bucket.put(f"blobs.{recording_id}.{index}", blob)
     await mgr.publish(
         f"blobs.{recording_id}.{index}",
         dumps({"recording_id": recording_id, "index": index}).encode(),
-        stream=STREAM,
+        stream=Config.VOICE_STREAM,
     )
 
     if index == 0:
         await mgr.publish(
             f"recording.{recording_id}.started",
             recording_id.encode(),
-            stream=STREAM,
+            stream=Config.VOICE_STREAM,
         )
 
     return await mgr.stop()
@@ -43,7 +42,6 @@ async def post_blob(recording_id: str, index: int, blob: bytes):
 async def recording_handler():
     """Process blobs posted and compute voice audio segments."""
     mgr = await NATSManager.create()
-    await mgr.add_stream(STREAM, SUBJECTS)
 
     async def on_recording_started(msg):
         vd = VoiceDetector()
@@ -85,7 +83,9 @@ async def recording_handler():
                     )
                     segment_count += 1
 
-        blob_sub = await mgr.subscribe(STREAM, f"blobs.{recording_id}.*", cb=on_blob)
+        blob_sub = await mgr.subscribe(
+            Config.VOICE_STREAM, f"blobs.{recording_id}.*", cb=on_blob
+        )
         await msg.ack()
 
         # Subscribe to end of recording
@@ -113,28 +113,30 @@ async def recording_handler():
                         ).encode(),
                     )
                     segment_count += 1
+
             print(f"Timeline: {timeline}")
+            await blob_sub.unsubscribe()
+            await end_sub.unsubscribe()
             await mgr.publish(
                 f"segmenting.{recording_id}.finished",
                 recording_id.encode(),
             )
-            await blob_sub.unsubscribe()
-            await end_sub.unsubscribe()
             await mgr.delete_kv_bucket(f"blobs-{recording_id}")
 
         end_sub = await mgr.subscribe(
-            STREAM, f"recording.{recording_id}.finished", cb=on_recording_finished
+            Config.VOICE_STREAM,
+            f"recording.{recording_id}.finished",
+            cb=on_recording_finished,
         )
 
     await mgr.subscribe(
-        STREAM, "recording.*.started", cb=on_recording_started, queue=QUEUE
+        Config.VOICE_STREAM, "recording.*.started", cb=on_recording_started, queue=QUEUE
     )
     return await mgr.run_forever()
 
 
 async def transcription_handler():
     mgr = await NATSManager.create()
-    await mgr.add_stream(STREAM, SUBJECTS)
 
     async def on_recording_started(msg):
         recording_id = msg.data.decode()
@@ -142,17 +144,16 @@ async def transcription_handler():
         pass
 
     await mgr.subscribe(
-        STREAM, "recording.*.started", cb=on_recording_started, queue=QUEUE
+        Config.VOICE_STREAM, "recording.*.started", cb=on_recording_started, queue=QUEUE
     )
     return await mgr.run_forever()
 
 
 async def end_recording(id: str):
     mgr = await NATSManager.create()
-    await mgr.add_stream(STREAM, SUBJECTS)
     await mgr.publish(
         f"recording.{id}.finished",
         id.encode(),
-        stream=STREAM,
+        stream=Config.VOICE_STREAM,
     )
     return await mgr.stop()

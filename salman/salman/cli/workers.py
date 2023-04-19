@@ -35,17 +35,13 @@ def conversation_worker():
 @app.command()
 def setup():
     """Setup streams and KV stores"""
-    from salman.workers.voice import SUBJECTS as voice_SUBJECTS  # noqa F401
-    from salman.workers.voice import STREAM as voice_STREAM  # noqa F401
+    from salman.config import Config
+    from salman.workers.voice import SUBJECTS
 
     async def _main():
         mgr = await NATSManager().create()
-        await mgr.delete_stream(voice_STREAM)
-        await mgr.add_stream(voice_STREAM, voice_SUBJECTS)
-        await mgr.delete_kv_bucket("voice")
-        await mgr.delete_kv_bucket("blobs-test")
-        await mgr.delete_kv_bucket("recording-test")
-        await mgr.delete_kv_bucket("segments-test")
+        await mgr.delete_stream(Config.VOICE_STREAM)
+        await mgr.add_stream(Config.VOICE_STREAM, SUBJECTS)
 
     asyncio.run(_main())
 

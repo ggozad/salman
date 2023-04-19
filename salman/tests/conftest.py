@@ -1,11 +1,11 @@
 import re
 from pathlib import Path
 
-import nats
 import pytest
 import pytest_asyncio
 
 import salman
+from salman.config import Config
 from salman.nats import NATSManager
 
 
@@ -26,10 +26,15 @@ def get_test_blobs(request):
 
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_streams():
+    Config.VOICE_STREAM = "test_stream"
     mgr = await NATSManager().create()
     await mgr.delete_stream("test_stream")
+    await mgr.delete_kv_bucket("blobs-test")
+    await mgr.delete_kv_bucket("segments-test")
 
     yield
 
     await mgr.delete_stream("test_stream")
+    await mgr.delete_kv_bucket("blobs-test")
+    await mgr.delete_kv_bucket("segments-test")
     await mgr.stop()
