@@ -4,7 +4,12 @@ from pathlib import Path
 import typer
 
 from salman.nats import NATSManager
-from salman.workers.voice import end_recording, post_blob, recording_handler
+from salman.workers.voice import (
+    end_recording,
+    post_blob,
+    segmentation_handler,
+    transcription_handler,
+)
 
 app = typer.Typer()
 
@@ -27,9 +32,15 @@ def add_blob(
 
 
 @app.command()
-def conversation_worker():
-    """Add a blob to the queue."""
-    asyncio.run(recording_handler())
+def segmentation_worker():
+    """Runs the segmentation worker"""
+    asyncio.run(segmentation_handler())
+
+
+@app.command()
+def transcription_worker():
+    """Runs the transcription worker"""
+    asyncio.run(transcription_handler())
 
 
 @app.command()

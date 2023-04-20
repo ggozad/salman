@@ -50,7 +50,6 @@ def test_transcribe_voice_detector_segments(get_test_blobs):
     for blob in get_test_blobs:
         voice_segments.extend(vd.add_audio(concat_blobs([blob])))
     voice_segments.extend(vd.finalize())
-
     assert len(voice_segments) == 14
     transcription = transcribe_segment(voice_segments[0])
     assert transcription.get("language") == "en"

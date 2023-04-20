@@ -1,21 +1,170 @@
 import io
-from json import dumps
+from json import dumps, loads
 
 from pydub import AudioSegment
 
 from salman.config import Config
 from salman.nats import NATSManager
 from salman.voice.detection import VoiceDetector
+from salman.voice.transcription import transcribe_segment
 
 SUBJECTS = [
     "blobs.*.*",
     "segments.*.*",
+    "transcripts.*.*",
     "recording.*.started",
     "recording.*.finished",
     "segmenting.*.finished",
     "transcribing.*.finished",
 ]
-QUEUE = "voice"
+SEGMENTATION_QUEUE = "segmentation"
+TRANSCRIPTION_QUEUE = "transcription"
+
+
+async def segmentation_handler():
+    """Process blobs posted and compute voice audio segments."""
+    mgr = await NATSManager.create()
+
+    async def on_recording_started(msg):
+        vd = VoiceDetector()
+        recording_id = msg.data.decode()
+        blob_bucket = await mgr.get_kv_bucket(f"blobs-{recording_id}")
+        segment_bucket = await mgr.get_kv_bucket(f"segments-{recording_id}")
+        segment_count = 0
+        print(f"Segmenting on voice {recording_id} started")
+
+        # Subscribe to subsequent blobs
+        async def on_blob(msg):
+            nonlocal segment_count
+            await msg.ack()
+            blob_entry = await blob_bucket.get(msg.subject)
+            audio = AudioSegment.from_file(io.BytesIO(blob_entry.value))
+            segments = vd.add_audio(audio)
+            timeline = vd.timeline
+            print(f"Segmenting, {msg.subject}...")
+            print(f"Found {len(segments)} segments.")
+            if segments:
+                for segment in segments:
+                    await segment_bucket.put(
+                        f"segments.{recording_id}.{segment_count}",
+                        segment.export(format="wav").read(),
+                    )
+                    await mgr.publish(
+                        f"segments.{recording_id}.{segment_count}",
+                        dumps(timeline[segment_count].for_json()).encode(),
+                    )
+                    segment_count += 1
+
+        blob_sub = await mgr.subscribe(
+            Config.VOICE_STREAM, f"blobs.{recording_id}.*", cb=on_blob
+        )
+        await msg.ack()
+
+        # Subscribe to end of recording
+        async def on_recording_finished(msg):
+            nonlocal segment_count
+            await msg.ack()
+            print(f"Finalizing voice detection on recording {recording_id}.")
+            segments = vd.finalize()
+            timeline = vd.timeline
+
+            if segments:
+                for segment in segments:
+                    await segment_bucket.put(
+                        f"segments.{recording_id}.{segment_count}",
+                        segment.export(format="wav").read(),
+                    )
+                    await mgr.publish(
+                        f"segments.{recording_id}.{segment_count}",
+                        dumps(timeline[segment_count].for_json()).encode(),
+                    )
+
+            await blob_sub.unsubscribe()
+            await end_sub.unsubscribe()
+            await mgr.publish(
+                f"segmenting.{recording_id}.finished",
+                dumps(timeline.for_json()["content"]).encode(),
+            )
+            await mgr.delete_kv_bucket(f"blobs-{recording_id}")
+
+        end_sub = await mgr.subscribe(
+            Config.VOICE_STREAM,
+            f"recording.{recording_id}.finished",
+            cb=on_recording_finished,
+        )
+
+    await mgr.subscribe(
+        Config.VOICE_STREAM,
+        "recording.*.started",
+        cb=on_recording_started,
+        queue=SEGMENTATION_QUEUE,
+    )
+    return await mgr.run_forever()
+
+
+async def transcription_handler():
+    mgr = await NATSManager.create()
+
+    async def on_recording_started(msg):
+        recording_id = msg.data.decode()
+        print(f"Transcription on voice {recording_id} started")
+        segment_bucket = await mgr.get_kv_bucket(f"segments-{recording_id}")
+        transcript_count = 0
+        total_segments = None
+
+        # Subscribe to subsequent segments
+        async def on_segment(msg):
+            nonlocal transcript_count
+            print(f"Transcribing {msg.subject}.")
+            segment_timeline = loads(msg.data.decode())
+            segment_entry = await segment_bucket.get(msg.subject)
+            wav = segment_entry.value
+            segment_transcription = transcribe_segment(
+                AudioSegment.from_file(io.BytesIO(wav))
+            )
+            segment_timeline["text"] = segment_transcription["text"]
+            segment_timeline["language"] = segment_transcription["language"]
+
+            await mgr.publish(
+                f"transcripts.{recording_id}.{transcript_count}",
+                dumps(segment_timeline).encode(),
+            )
+
+            if total_segments is not None and transcript_count == total_segments - 1:
+                print(f"Finalizing transcription on recording {recording_id}.")
+                await end_sub.unsubscribe()
+                await segment_sub.unsubscribe()
+                await mgr.publish(
+                    f"transcribing.{recording_id}.finished",
+                    recording_id.encode(),
+                )
+                await mgr.delete_kv_bucket(f"segments-{recording_id}")
+
+            transcript_count += 1
+            await msg.ack()
+
+        segment_sub = await mgr.subscribe(
+            Config.VOICE_STREAM, f"segments.{recording_id}.*", cb=on_segment
+        )
+
+        # Subscribe to end of recording
+        async def on_segmenting_finished(msg):
+            nonlocal total_segments
+            segments = loads(msg.data.decode())
+            total_segments = len(segments)
+
+        end_sub = await mgr.subscribe(
+            Config.VOICE_STREAM, "segmenting.*.finished", cb=on_segmenting_finished
+        )
+        await msg.ack()
+
+    await mgr.subscribe(
+        Config.VOICE_STREAM,
+        "recording.*.started",
+        cb=on_recording_started,
+        queue=TRANSCRIPTION_QUEUE,
+    )
+    return await mgr.run_forever()
 
 
 async def post_blob(recording_id: str, index: int, blob: bytes):
@@ -37,116 +186,6 @@ async def post_blob(recording_id: str, index: int, blob: bytes):
         )
 
     return await mgr.stop()
-
-
-async def recording_handler():
-    """Process blobs posted and compute voice audio segments."""
-    mgr = await NATSManager.create()
-
-    async def on_recording_started(msg):
-        vd = VoiceDetector()
-        recording_id = msg.data.decode()
-        blob_bucket = await mgr.get_kv_bucket(f"blobs-{recording_id}")
-        segment_bucket = await mgr.get_kv_bucket(f"segments-{recording_id}")
-        segment_count = 0
-        # Add the first blob
-        blob_entry = await blob_bucket.get(f"blobs.{recording_id}.0")
-        audio = AudioSegment.from_file(io.BytesIO(blob_entry.value))
-        vd.add_audio(audio)
-        print(f"Processing on voice {recording_id} started")
-
-        # Subscribe to subsequent blobs
-        async def on_blob(msg):
-            nonlocal segment_count
-            await msg.ack()
-
-            blob_entry = await blob_bucket.get(msg.subject)
-            audio = AudioSegment.from_file(io.BytesIO(blob_entry.value))
-            segments = vd.add_audio(audio)
-            timeline = vd.timeline
-            print(f"Processing on voice {recording_id}...")
-            print(f"Found {len(segments)} segments.")
-            if segments:
-                for segment in segments:
-                    await segment_bucket.put(
-                        f"segments.{recording_id}.{segment_count}",
-                        segment.export(format="wav").read(),
-                    )
-                    await mgr.publish(
-                        f"segments.{recording_id}.{segment_count}",
-                        dumps(
-                            {
-                                "start": timeline[segment_count].start,
-                                "end": timeline[segment_count].end,
-                            }
-                        ).encode(),
-                    )
-                    segment_count += 1
-
-        blob_sub = await mgr.subscribe(
-            Config.VOICE_STREAM, f"blobs.{recording_id}.*", cb=on_blob
-        )
-        await msg.ack()
-
-        # Subscribe to end of recording
-        async def on_recording_finished(msg):
-            nonlocal segment_count
-            await msg.ack()
-            print(f"Finalizing voice detection on recording {recording_id}.")
-            segments = vd.finalize()
-            timeline = vd.timeline
-            print(f"Found {len(segments)} segments.")
-
-            if segments:
-                for segment in segments:
-                    await segment_bucket.put(
-                        f"segments.{recording_id}.{segment_count}",
-                        segment.export(format="wav").read(),
-                    )
-                    await mgr.publish(
-                        f"segments.{recording_id}.{segment_count}",
-                        dumps(
-                            {
-                                "start": timeline[segment_count].start,
-                                "end": timeline[segment_count].end,
-                            }
-                        ).encode(),
-                    )
-                    segment_count += 1
-
-            print(f"Timeline: {timeline}")
-            await blob_sub.unsubscribe()
-            await end_sub.unsubscribe()
-            await mgr.publish(
-                f"segmenting.{recording_id}.finished",
-                recording_id.encode(),
-            )
-            await mgr.delete_kv_bucket(f"blobs-{recording_id}")
-
-        end_sub = await mgr.subscribe(
-            Config.VOICE_STREAM,
-            f"recording.{recording_id}.finished",
-            cb=on_recording_finished,
-        )
-
-    await mgr.subscribe(
-        Config.VOICE_STREAM, "recording.*.started", cb=on_recording_started, queue=QUEUE
-    )
-    return await mgr.run_forever()
-
-
-async def transcription_handler():
-    mgr = await NATSManager.create()
-
-    async def on_recording_started(msg):
-        recording_id = msg.data.decode()
-        print(f"Transcription on voice {recording_id} started")
-        pass
-
-    await mgr.subscribe(
-        Config.VOICE_STREAM, "recording.*.started", cb=on_recording_started, queue=QUEUE
-    )
-    return await mgr.run_forever()
 
 
 async def end_recording(id: str):

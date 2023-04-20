@@ -22,3 +22,5 @@ def test_voice_segments(get_test_blobs):
     assert len(voice_segments) == 14
     assert round(timeline[0].start, 3) == 0.278
     assert round(timeline[0].end, 3) == 4.244
+    assert round(timeline[-1].start, 3) == 37.091
+    assert round(timeline[-1].end, 3) == 41.377
