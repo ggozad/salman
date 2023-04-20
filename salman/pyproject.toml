@@ -6,7 +6,7 @@ authors = ["Yiorgis Gozadinos <ggozadinos@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 langchain = "^0.0.135"
 python-dotenv = "^1.0.0"
 typer = {version = "^0.7.0", extras = ["all"]}
@@ -79,5 +79,5 @@ per-file-ignores = {"__init__.py"=["F401","F403"]}
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-# Assume Python 3.10.
-target-version = "py310"
+# Assume Python 3.9.
+target-version = "py39"
