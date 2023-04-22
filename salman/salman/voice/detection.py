@@ -54,6 +54,7 @@ class VoiceDetector:
 
         self.audio += audio
         timeline = get_voice_segments(self.audio)
+        complete_audio_segments = []
         if len(timeline) > 0:
             last_segment = timeline[-1]
             new_time = (
