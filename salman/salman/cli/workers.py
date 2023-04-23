@@ -50,7 +50,7 @@ def setup():
     from salman.workers.voice import SUBJECTS
 
     async def _main():
-        mgr = await NATSManager().create()
+        mgr = await NATSManager().create(Config.NATS_URL)
         await mgr.delete_stream(Config.VOICE_STREAM)
         await mgr.add_stream(Config.VOICE_STREAM, SUBJECTS)
 

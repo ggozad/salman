@@ -3,6 +3,7 @@ from json import loads
 
 import pytest
 
+from salman.config import Config
 from salman.nats import NATSManager
 from salman.workers.voice import (
     SUBJECTS,
@@ -16,7 +17,7 @@ from salman.workers.voice import (
 @pytest.mark.parametrize("get_test_blobs", ["conversations/1"], indirect=True)
 @pytest.mark.asyncio
 async def test_voice_detection_worker(get_test_blobs):
-    mgr = await NATSManager.create()
+    mgr = await NATSManager.create(Config.NATS_URL)
     await mgr.add_stream("test_stream", SUBJECTS)
     segmentation_task = asyncio.create_task(segmentation_handler())
     transcription_task = asyncio.create_task(transcription_handler())

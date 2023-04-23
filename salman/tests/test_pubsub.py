@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from salman.config import Config
 from salman.nats import NATSManager
 
 
@@ -13,7 +14,7 @@ def fibo(n):
 
 @pytest.mark.asyncio
 async def test_pubsub():
-    mgr = await NATSManager.create()
+    mgr = await NATSManager.create(Config.NATS_URL)
     await mgr.add_stream("test_stream", ["fibo.even", "fibo.odd"])
 
     received = []
@@ -52,7 +53,7 @@ async def test_pubsub():
 
 @pytest.mark.asyncio
 async def test_workers():
-    mgr = await NATSManager.create()
+    mgr = await NATSManager.create(Config.NATS_URL)
     await mgr.add_stream("test_stream", ["tasks"])
 
     worker1_received = []
@@ -82,7 +83,7 @@ async def test_workers():
 
 @pytest.mark.asyncio
 async def test_receipt():
-    mgr = await NATSManager.create()
+    mgr = await NATSManager.create(Config.NATS_URL)
     await mgr.add_stream("test_stream", ["tasks"])
 
     worker_received = []

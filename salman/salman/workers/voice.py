@@ -26,7 +26,7 @@ async def segmentation_handler():
     from salman.logging import segmentation_logger as logger
 
     logger.info("Segmentation handler started.")
-    mgr = await NATSManager.create()
+    mgr = await NATSManager.create(url=Config.NATS_URL)
 
     async def on_recording_started(msg):
         vd = VoiceDetector()
@@ -109,7 +109,7 @@ async def transcription_handler():
 
     logger.info("Transcription handler started.")
 
-    mgr = await NATSManager.create()
+    mgr = await NATSManager.create(url=Config.NATS_URL)
 
     async def on_recording_started(msg):
         recording_id = msg.data.decode()
@@ -175,7 +175,7 @@ async def transcription_handler():
 
 async def post_blob(recording_id: str, index: int, blob: bytes):
     """Post a blob to the queue."""
-    mgr = await NATSManager.create()
+    mgr = await NATSManager.create(url=Config.NATS_URL)
     blob_bucket = await mgr.get_kv_bucket(f"blobs-{recording_id}")
     await blob_bucket.put(f"blobs.{recording_id}.{index}", blob)
     await mgr.publish(
@@ -195,7 +195,7 @@ async def post_blob(recording_id: str, index: int, blob: bytes):
 
 
 async def end_recording(id: str):
-    mgr = await NATSManager.create()
+    mgr = await NATSManager.create(url=Config.NATS_URL)
     await mgr.publish(
         f"recording.{id}.finished",
         id.encode(),
