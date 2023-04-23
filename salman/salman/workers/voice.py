@@ -23,6 +23,9 @@ TRANSCRIPTION_QUEUE = "transcription"
 
 async def segmentation_handler():
     """Process blobs posted and compute voice audio segments."""
+    from salman.logging import segmentation_logger as logger
+
+    logger.info("Segmentation handler started.")
     mgr = await NATSManager.create()
 
     async def on_recording_started(msg):
@@ -31,7 +34,7 @@ async def segmentation_handler():
         blob_bucket = await mgr.get_kv_bucket(f"blobs-{recording_id}")
         segment_bucket = await mgr.get_kv_bucket(f"segments-{recording_id}")
         segment_count = 0
-        print(f"Segmenting on voice {recording_id} started")
+        logger.info(f'Segmentation on recording "{recording_id}" started.')
 
         # Subscribe to subsequent blobs
         async def on_blob(msg):
@@ -41,8 +44,7 @@ async def segmentation_handler():
             audio = AudioSegment.from_file(io.BytesIO(blob_entry.value))
             segments = vd.add_audio(audio)
             timeline = vd.timeline
-            print(f"Segmenting, {msg.subject}...")
-            print(f"Found {len(segments)} segments.")
+            logger.info(f"Segmenting on {msg.subject}, {len(segments)} segments found.")
             if segments:
                 for segment in segments:
                     await segment_bucket.put(
@@ -64,7 +66,7 @@ async def segmentation_handler():
         async def on_recording_finished(msg):
             nonlocal segment_count
             await msg.ack()
-            print(f"Finalizing voice detection on recording {recording_id}.")
+            logger.info(f"Finalizing segmentation of recording {recording_id}.")
             segments = vd.finalize()
             timeline = vd.timeline
 
@@ -103,11 +105,15 @@ async def segmentation_handler():
 
 
 async def transcription_handler():
+    from salman.logging import transcription_logger as logger
+
+    logger.info("Transcription handler started.")
+
     mgr = await NATSManager.create()
 
     async def on_recording_started(msg):
         recording_id = msg.data.decode()
-        print(f"Transcription on voice {recording_id} started")
+        logger.info(f"Transcription on recording {recording_id} started")
         segment_bucket = await mgr.get_kv_bucket(f"segments-{recording_id}")
         transcript_count = 0
         total_segments = None
@@ -115,7 +121,7 @@ async def transcription_handler():
         # Subscribe to subsequent segments
         async def on_segment(msg):
             nonlocal transcript_count
-            print(f"Transcribing {msg.subject}.")
+            logger.info(f"Transcribing {msg.subject}.")
             segment_timeline = loads(msg.data.decode())
             segment_entry = await segment_bucket.get(msg.subject)
             wav = segment_entry.value
@@ -131,7 +137,7 @@ async def transcription_handler():
             )
 
             if total_segments is not None and transcript_count == total_segments - 1:
-                print(f"Finalizing transcription on recording {recording_id}.")
+                logger.info(f"Finalizing transcription on recording {recording_id}.")
                 await end_sub.unsubscribe()
                 await segment_sub.unsubscribe()
                 await mgr.publish(
