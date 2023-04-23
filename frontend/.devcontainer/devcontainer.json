@@ -1,0 +1,75 @@
+{
+  // Reference: https://code.visualstudio.com/docs/remote/devcontainerjson-reference
+  "name": "frontend",
+  "dockerComposeFile": ["../../docker-compose.yml"],
+  "service": "frontend",
+  "runServices": ["frontend", "nats", "transcriber", "segmenter"],
+  "shutdownAction": "stopCompose",
+  "workspaceFolder": "/app",
+  // Set *default* container specific settings.json values on container create.
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "search.exclude": {
+          "**/.yarn": true,
+          "**/.pnp.*": true,
+          ".next/*": true
+        },
+        "files.exclude": {
+          "**/node_modules": true
+        },
+        "files.eol": "\n",
+        "editor.tabSize": 2,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": true
+        },
+        "eslint.validate": ["javascript", "javascriptreact"],
+        "eslint.alwaysShowStatus": true,
+        "editor.formatOnSave": true,
+        "[yml]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[javascriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        },
+        "prettier-eslint.eslintIntegration": true,
+        "scss.lint.unknownAtRules": "ignore"
+      },
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "dbaeumer.vscode-eslint", // ESLint
+        "esbenp.prettier-vscode", // Prettier code formatter
+        "bierner.color-info", // JSX and CSS color information
+        "visualstudioexptteam.vscodeintellicode", // AI-assisted development
+        "christian-kohler.npm-intellisense", // Autocompletes npm modules in import statements
+        "eamodio.gitlens", // IDE Git information
+        "ms-azuretools.vscode-docker", // Docker integration and linting
+        "shardulm94.trailing-spaces", // Show trailing spaces
+        "davidanson.vscode-markdownlint",
+        "stkb.rewrap", // rewrap comments after n characters on one line
+        "oderwat.indent-rainbow", // Makes indentation easier to read
+        "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
+        "github.copilot" // Github copilot AI
+      ]
+    }
+  },
+  "remoteUser": "node"
+}

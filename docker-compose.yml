@@ -31,3 +31,16 @@ services:
     entrypoint: workers segmentation-worker
     volumes:
       - ./volumes/.cache:/home/salman/.cache
+
+  frontend:
+    container_name: frontend
+    image: salman-frontend:dev
+    build:
+      context: ./frontend
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ./frontend:/app
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/npm:/home/node/.npm
+    restart: always
+    ports:
+      - 3000:3000
