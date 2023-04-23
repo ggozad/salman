@@ -9,3 +9,25 @@ services:
     command: -js
     volumes:
       - ./volumes/nats:/tmp/nats/jetstream
+
+  transcriber:
+    container_name: transcriber
+    image: salman:dev
+    build: ./salman
+    env_file:
+      - ./secrets/keys.env
+      - ./config/nats.env
+    entrypoint: workers transcription-worker
+    volumes:
+      - ./volumes/.cache:/home/salman/.cache
+  
+  segmenter:
+    container_name: segmenter
+    image: salman:dev
+    build: ./salman
+    env_file:
+      - ./secrets/keys.env
+      - ./config/nats.env
+    entrypoint: workers segmentation-worker
+    volumes:
+      - ./volumes/.cache:/home/salman/.cache
