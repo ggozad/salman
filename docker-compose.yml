@@ -1,12 +1,13 @@
 version: "3.5"
 services:
   nats:
-    image: nats
+    image: nats-salman:dev
+    build: ./nats
     ports:
+      - "443:443"
       - "4222:4222"
       - "6222:6222"
       - "8222:8222"
-    command: -js
     volumes:
       - ./volumes/nats:/tmp/nats/jetstream
 
@@ -38,6 +39,8 @@ services:
     build:
       context: ./frontend
       dockerfile: docker/Dockerfile
+    env_file:
+      - ./config/nats.env
     volumes:
       - ./frontend:/app
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/npm:/home/node/.npm

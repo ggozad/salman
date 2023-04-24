@@ -2,7 +2,7 @@ import Head from 'next/head'
 
 import AudioRecorder from '@/components/AudioRecorder'
 import { AudioRecorderProvider } from '@/components/AudioRecorderContext'
-console.log(process.env)
+import { NATSProvider } from '@/components/NATSContext'
 export default function Home() {
   return (
     <>
@@ -13,9 +13,11 @@ export default function Home() {
         <link href="/favicon.ico" rel="icon" />
       </Head>
       <main>
-        <AudioRecorderProvider>
-          <AudioRecorder />
-        </AudioRecorderProvider>
+        <NATSProvider>
+          <AudioRecorderProvider>
+            <AudioRecorder />
+          </AudioRecorderProvider>
+        </NATSProvider>
       </main>
     </>
   )
