@@ -45,13 +45,13 @@ export function NATSProvider({ children }: { children: ReactNode }) {
 
   const publish = useCallback(
     (subject: string, msg?: Uint8Array, options?: PublishOptions) => {
-      connection.publish(subject, msg, options)
+      connection?.publish(subject, msg, options)
     },
     [connection]
   )
   const subscribe = useCallback(
     (subject: string, options?: SubscriptionOptions) =>
-      connection.subscribe(subject, options),
+      connection?.subscribe(subject, options),
     [connection]
   )
 

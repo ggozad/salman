@@ -9,6 +9,9 @@ import {
   useState,
 } from 'react'
 
+import { useNATS } from '@/components/NATSContext'
+import { Subscription } from 'nats.ws'
+
 const mimeType = 'audio/webm'
 const loopInterval = 3000
 
@@ -22,7 +25,7 @@ export interface AudioRecorderState {
   canRecord: boolean
   status: RecorderStatus
   audioUrl: string
-  transcript: string
+  transcripts: any[]
   requestPermission: () => Promise<void>
   startRecording: () => void
   stopRecording: () => void
@@ -32,18 +35,31 @@ const recorderContext: Context<AudioRecorderState | undefined> =
   createContext(undefined)
 
 export function AudioRecorderProvider({ children }: { children: ReactNode }) {
+  const { publish, subscribe, codec } = useNATS()
+  const [transcriptSub, setTranscriptSub] = useState<Subscription | null>(null)
+  const [transcripts, setTranscripts] = useState([])
+
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const [canRecord, setCanRecord] = useState(false)
   const [status, setStatus] = useState<RecorderStatus>(RecorderStatus.inactive)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [audioChunks, setAudioChunks] = useState<Blob[]>([])
   const [audioUrl, setAudioUrl] = useState<string>('')
-  const [transcript, setTranscript] = useState<string>('')
   const loopTimeout = useRef<NodeJS.Timeout | null>(null)
   const audioChunksRef = useRef([])
   const uuid = useRef('')
 
-  console.log(audioChunks)
+  useEffect(() => {
+    if (!transcriptSub) return
+    const fetch = async () => {
+      for await (const m of transcriptSub) {
+        console.log(
+          `[${transcriptSub.getProcessed()}]: ${codec.decode(m.data)}`
+        )
+      }
+    }
+    fetch()
+  }, [transcriptSub, codec])
 
   useEffect(() => {
     audioChunksRef.current = audioChunks
@@ -84,12 +100,19 @@ export function AudioRecorderProvider({ children }: { children: ReactNode }) {
     if (mediaRecorder.current === null) return
     mediaRecorder.current.stop()
     clearTimeout(loopTimeout.current)
-  }, [])
+    if (transcriptSub) transcriptSub.unsubscribe()
+  }, [transcriptSub])
 
   const startRecording = useCallback(() => {
+    uuid.current = Math.random().toString(36).substring(2, 15)
+
+    const sub = subscribe(`transcripts.${uuid.current}.*`)
+    setTranscriptSub(sub)
+    console.log(sub)
+
     setStatus(RecorderStatus.active)
     setAudioChunks([])
-    uuid.current = Math.random().toString(36).substring(2, 15)
+
     if (stream === null) return
     const media = new MediaRecorder(stream)
 
@@ -110,7 +133,7 @@ export function AudioRecorderProvider({ children }: { children: ReactNode }) {
       loopTimeout.current = setTimeout(loop, loopInterval)
     }
     loopTimeout.current = setTimeout(loop, loopInterval)
-  }, [stream])
+  }, [stream, subscribe])
 
   return (
     <recorderContext.Provider
@@ -119,7 +142,7 @@ export function AudioRecorderProvider({ children }: { children: ReactNode }) {
         canRecord,
         status,
         audioUrl,
-        transcript,
+        transcripts,
         requestPermission,
         startRecording,
         stopRecording,

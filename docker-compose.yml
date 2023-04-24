@@ -1,6 +1,7 @@
 version: "3.5"
 services:
   nats:
+    container_name: nats
     image: nats-salman:dev
     build: ./nats
     ports:
@@ -21,7 +22,7 @@ services:
     entrypoint: workers transcription-worker
     volumes:
       - ./volumes/.cache:/home/salman/.cache
-  
+
   segmenter:
     container_name: segmenter
     image: salman:dev
