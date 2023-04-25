@@ -1,6 +1,9 @@
 import {
   Codec,
+  JetStreamClient,
+  JetStreamPublishOptions,
   NatsConnection,
+  PubAck,
   PublishOptions,
   StringCodec,
   Subscription,
@@ -24,6 +27,7 @@ export interface NATSState {
   publish: (subject: string, msg?: Uint8Array, options?: PublishOptions) => void
   subscribe: (subject: string, options?: SubscriptionOptions) => Subscription
   codec: Codec<string>
+  jetstream: JetStreamClient | null
 }
 
 const natsContext: Context<NATSState | undefined> = createContext(undefined)
@@ -32,6 +36,7 @@ const codec = StringCodec()
 
 export function NATSProvider({ children }: { children: ReactNode }) {
   const [connection, setConnection] = useState<NatsConnection | null>(null)
+  const [jetstream, setJetstream] = useState<JetStreamClient | null>(null)
 
   const serverDisconnect = useCallback(async () => {}, [])
 
@@ -40,6 +45,7 @@ export function NATSProvider({ children }: { children: ReactNode }) {
       servers: [process.env.NEXT_PUBLIC_NATS_WS],
     }).then((nc) => {
       setConnection(nc)
+      setJetstream(nc.jetstream())
     })
   }, [])
 
@@ -70,6 +76,7 @@ export function NATSProvider({ children }: { children: ReactNode }) {
         publish,
         subscribe,
         codec,
+        jetstream,
       }}
     >
       {children}

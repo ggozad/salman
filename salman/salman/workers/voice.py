@@ -132,7 +132,7 @@ async def transcription_handler():
                 )
                 segment_timeline["text"] = segment_transcription["text"]
                 segment_timeline["language"] = segment_transcription["language"]
-
+                logger.info(segment_timeline)
                 await mgr.publish(
                     f"transcripts.{recording_id}.{transcript_count}",
                     dumps(segment_timeline).encode(),
