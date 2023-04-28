@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from salman.nats import NATSManager
+from salman.nats import Session
 from salman.workers.voice import (
     end_recording,
     post_blob,
@@ -50,9 +50,9 @@ def setup():
     from salman.workers.voice import SUBJECTS
 
     async def _main():
-        mgr = await NATSManager().create(Config.NATS_URL)
-        await mgr.delete_stream(Config.VOICE_STREAM)
-        await mgr.add_stream(Config.VOICE_STREAM, SUBJECTS)
+        async with Session(Config.NATS_URL) as mgr:
+            await mgr.delete_stream(Config.VOICE_STREAM)
+            await mgr.add_stream(Config.VOICE_STREAM, SUBJECTS)
 
     asyncio.run(_main())
 

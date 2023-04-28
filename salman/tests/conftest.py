@@ -6,7 +6,7 @@ import pytest_asyncio
 
 import salman
 from salman.config import Config
-from salman.nats import NATSManager
+from salman.nats import Session
 
 
 @pytest.fixture(scope="function")
@@ -27,14 +27,13 @@ def get_test_blobs(request):
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_streams():
     Config.VOICE_STREAM = "test_stream"
-    mgr = await NATSManager().create()
-    await mgr.delete_stream("test_stream")
-    await mgr.delete_kv_bucket("blobs-test")
-    await mgr.delete_kv_bucket("segments-test")
+    async with Session() as mgr:
+        await mgr.delete_stream("test_stream")
+        await mgr.delete_kv_bucket("blobs-test")
+        await mgr.delete_kv_bucket("segments-test")
 
     yield
-
-    await mgr.delete_stream("test_stream")
-    await mgr.delete_kv_bucket("blobs-test")
-    await mgr.delete_kv_bucket("segments-test")
-    await mgr.stop()
+    async with Session() as mgr:
+        await mgr.delete_stream("test_stream")
+        await mgr.delete_kv_bucket("blobs-test")
+        await mgr.delete_kv_bucket("segments-test")

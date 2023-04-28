@@ -1,6 +1,5 @@
 import asyncio
 import signal
-from typing import List
 
 import nats
 from nats.js.api import ConsumerConfig, PubAck, StreamInfo
@@ -9,17 +8,19 @@ from nats.js.errors import NotFoundError
 from nats.js.kv import KeyValue
 
 
-class NATSManager:
-    def __init__(self):
+class Session:
+    def __init__(self, url="nats://localhost:4222"):
         self._done = asyncio.Future()
+        self.url = url
 
-    @classmethod
-    async def create(cls, url="nats://localhost:4222") -> "NATSManager":
-        self = NATSManager()
-        self._nc = await nats.connect(url)
+    async def __aenter__(self):
+        self._nc = await nats.connect(self.url)
         self._js = self._nc.jetstream()
         self._handle_signals()
         return self
+
+    async def __aexit__(self, *args):
+        await self.stop()
 
     async def run_forever(self) -> None:
         try:
@@ -29,7 +30,7 @@ class NATSManager:
 
     async def stop(self) -> None:
         await self._nc.close()
-        if self._done:
+        if self._done and not self._done.done():
             self._done.set_result(True)
 
     def _handle_signals(self) -> None:
@@ -43,7 +44,7 @@ class NATSManager:
                 getattr(signal, sig), signal_handler
             )
 
-    async def add_stream(self, name: str, subjects: List[str]) -> StreamInfo:
+    async def add_stream(self, name: str, subjects: list[str]) -> StreamInfo:
         return await self._js.add_stream(name=name, subjects=subjects)
 
     async def delete_stream(self, name: str) -> bool:
