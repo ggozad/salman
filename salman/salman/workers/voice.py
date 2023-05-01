@@ -71,6 +71,9 @@ async def segmentation_handler():
                 logger.info(f"Finalizing segmentation of recording {recording_id}.")
                 segments = vd.finalize()
                 timeline = vd.timeline
+                logger.info(
+                    f"Final segmenting on {msg.subject}, {len(segments)} segments found."
+                )
 
                 if segments:
                     for segment in segments:
@@ -191,12 +194,14 @@ async def post_blob(recording_id: str, index: int, blob: bytes):
             stream=Config.VOICE_STREAM,
         )
 
-        if index == 0:
-            await mgr.publish(
-                f"recording.{recording_id}.started",
-                recording_id.encode(),
-                stream=Config.VOICE_STREAM,
-            )
+
+async def start_recording(id: str):
+    async with Session(url=Config.NATS_URL) as mgr:
+        await mgr.publish(
+            f"recording.{id}.started",
+            id.encode(),
+            stream=Config.VOICE_STREAM,
+        )
 
 
 async def end_recording(id: str):

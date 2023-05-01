@@ -10,6 +10,7 @@ from salman.workers.voice import (
     end_recording,
     post_blob,
     segmentation_handler,
+    start_recording,
     transcription_handler,
 )
 
@@ -48,6 +49,7 @@ async def test_voice_detection_worker(get_test_blobs):
             "test_stream", "transcribing.test.finished", transcription_done
         )
 
+        await start_recording("test")
         for i, blob in enumerate(get_test_blobs):
             await post_blob("test", i, blob)
             await asyncio.sleep(0.1)

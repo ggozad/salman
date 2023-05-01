@@ -5,7 +5,7 @@ import typer
 from pydub import AudioSegment
 
 from salman.voice.recorder import MicRecorder
-from salman.workers.voice import end_recording, post_blob
+from salman.workers.voice import end_recording, post_blob, start_recording
 
 app = typer.Typer()
 
@@ -19,6 +19,7 @@ def salman():
         count = 0
         uid = uuid.uuid4().hex
         print("Recording")
+        await start_recording(uid)
         for blob in recorder.record():
             print(f"Recording {count}")
             audio_segment = AudioSegment(
