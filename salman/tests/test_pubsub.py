@@ -124,3 +124,17 @@ async def test_receipt():
         assert set(worker_received) == set(
             ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
         )
+
+
+@pytest.mark.asyncio
+async def test_kv():
+    async with Session(Config.NATS_URL) as mgr:
+        kv = await mgr.get_kv_bucket("test_kv")
+        await kv.put("test_key", b"test_value")
+        assert (await kv.get("test_key")).value == b"test_value"
+
+        await mgr.delete_kv_bucket("test_kv")
+        from nats.js.errors import KeyNotFoundError
+
+        with pytest.raises(KeyNotFoundError):
+            await kv.get("test_key")

@@ -29,11 +29,11 @@ async def cleanup_streams():
     Config.VOICE_STREAM = "test_stream"
     async with Session() as mgr:
         await mgr.delete_stream("test_stream")
-        await mgr.delete_kv_bucket("blobs-test")
-        await mgr.delete_kv_bucket("segments-test")
+        # await mgr.delete_kv_bucket("blobs-test")
+        # await mgr.delete_kv_bucket("segments-test")
 
     yield
     async with Session() as mgr:
         await mgr.delete_stream("test_stream")
-        await mgr.delete_kv_bucket("blobs-test")
-        await mgr.delete_kv_bucket("segments-test")
+        # await mgr.delete_kv_bucket("blobs-test")
+        # await mgr.delete_kv_bucket("segments-test")

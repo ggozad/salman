@@ -81,10 +81,7 @@ class Session:
         return await self._js.create_key_value(bucket=name)
 
     async def delete_kv_bucket(self, bucket: str) -> bool:
-        try:
-            return await self._js.delete_key_value(bucket=bucket)
-        except NotFoundError:
-            return False
+        return await self._js.delete_key_value(bucket=bucket)
 
     async def get_kv_bucket(self, name: str) -> KeyValue:
         return await self._js.create_key_value(bucket=name)

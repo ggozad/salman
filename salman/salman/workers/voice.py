@@ -19,6 +19,7 @@ SUBJECTS = [
 ]
 SEGMENTATION_QUEUE = "segmentation"
 TRANSCRIPTION_QUEUE = "transcription"
+CLEANUP_QUEUE = "cleanup"
 
 
 async def segmentation_handler():
@@ -85,14 +86,12 @@ async def segmentation_handler():
                             f"segments.{recording_id}.{segment_count}",
                             dumps(timeline[segment_count].for_json()).encode(),
                         )
-
-                await blob_sub.unsubscribe()
-                await end_sub.unsubscribe()
                 await mgr.publish(
                     f"segmenting.{recording_id}.finished",
                     dumps(timeline.for_json()["content"]).encode(),
                 )
-                await mgr.delete_kv_bucket(f"blobs-{recording_id}")
+                await blob_sub.unsubscribe()
+                await end_sub.unsubscribe()
 
             end_sub = await mgr.subscribe(
                 Config.VOICE_STREAM,
@@ -154,7 +153,6 @@ async def transcription_handler():
                         f"transcribing.{recording_id}.finished",
                         recording_id.encode(),
                     )
-                    await mgr.delete_kv_bucket(f"segments-{recording_id}")
 
                 transcript_count += 1
                 await msg.ack()
@@ -179,6 +177,29 @@ async def transcription_handler():
             "recording.*.started",
             cb=on_recording_started,
             queue=TRANSCRIPTION_QUEUE,
+        )
+        return await mgr.run_forever()
+
+
+async def cleanup_handler():
+    from salman.logging import cleanup_logger as logger
+
+    logger.info("Cleanup handler started.")
+
+    async with Session(url=Config.NATS_URL) as mgr:
+
+        async def on_transcription_finished(msg):
+            recording_id = msg.data.decode()
+            await msg.ack()
+            logger.info(f"Cleaning up recording {recording_id}.")
+            await mgr.delete_kv_bucket(f"segments-{recording_id}")
+            await mgr.delete_kv_bucket(f"blobs-{recording_id}")
+
+        await mgr.subscribe(
+            Config.VOICE_STREAM,
+            "transcribing.*.finished",
+            cb=on_transcription_finished,
+            queue=CLEANUP_QUEUE,
         )
         return await mgr.run_forever()
 

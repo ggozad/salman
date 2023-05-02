@@ -25,7 +25,6 @@ def salman():
             audio_segment = AudioSegment(
                 blob, sample_width=2, channels=1, frame_rate=16384
             )
-            audio_segment.export(f"mp4-{count}.mp4", format="mp4")
             await post_blob(uid, count, audio_segment.export(format="mp4").read())
             if count == 0:
                 recorder.close()

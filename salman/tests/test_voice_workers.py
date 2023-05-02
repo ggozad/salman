@@ -12,6 +12,7 @@ from salman.workers.voice import (
     segmentation_handler,
     start_recording,
     transcription_handler,
+    cleanup_handler,
 )
 
 
@@ -22,6 +23,7 @@ async def test_voice_detection_worker(get_test_blobs):
         await mgr.add_stream("test_stream", SUBJECTS)
         segmentation_task = asyncio.create_task(segmentation_handler())
         transcription_task = asyncio.create_task(transcription_handler())
+        cleanup_task = asyncio.create_task(cleanup_handler())
 
         segments = []
         transcripts = []
@@ -39,6 +41,8 @@ async def test_voice_detection_worker(get_test_blobs):
 
         async def transcription_done(msg):
             transcription_task.cancel()
+            await asyncio.sleep(1)
+            cleanup_task.cancel()
 
         await mgr.subscribe("test_stream", "segments.test.*", on_segment)
         await mgr.subscribe("test_stream", "transcripts.test.*", on_transcript)
@@ -75,3 +79,15 @@ async def test_voice_detection_worker(get_test_blobs):
             == " I'll show it off to everybody and tell them I know somebody who knows somebody famous."
         )
         assert transcripts[-1].get("language") == "en"
+
+        await cleanup_task
+        # After cleanup we should have no kv buckets.
+        blobs = await mgr.get_kv_bucket("blobs-test")
+        segments = await mgr.get_kv_bucket("segments-test")
+
+        from nats.js.errors import NoKeysError
+
+        with pytest.raises(NoKeysError):
+            assert (await blobs.keys()) == []
+        with pytest.raises(NoKeysError):
+            assert (await segments.keys()) == []

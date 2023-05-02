@@ -34,6 +34,17 @@ services:
     volumes:
       - ./volumes/.cache:/home/salman/.cache
 
+  cleanup:
+    container_name: cleanup
+    image: salman:dev
+    build: ./salman
+    env_file:
+      - ./secrets/keys.env
+      - ./config/nats.env
+    entrypoint: workers cleanup-worker
+    volumes:
+      - ./volumes/.cache:/home/salman/.cache
+
   frontend:
     container_name: frontend
     image: salman-frontend:dev

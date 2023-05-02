@@ -24,6 +24,14 @@ def transcription_worker():
 
 
 @app.command()
+def cleanup_worker():
+    """Runs the cleanup worker"""
+    from salman.workers.voice import cleanup_handler
+
+    asyncio.run(cleanup_handler())
+
+
+@app.command()
 def setup():
     """Setup streams and KV stores"""
     from salman.config import Config

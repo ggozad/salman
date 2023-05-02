@@ -10,7 +10,7 @@ ENV PYTHONUNBUFFERED 1
 
 RUN \
     apt-get update && \
-    apt-get install --no-install-recommends -y curl gettext git ffmpeg build-essential && \
+    apt-get install --no-install-recommends -y curl gettext git ffmpeg build-essential portaudio19-dev && \
     rm -r /var/cache/apt /var/lib/apt
 
 COPY poetry.lock pyproject.toml README.md /app/
