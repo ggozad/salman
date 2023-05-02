@@ -7,12 +7,12 @@ from salman.config import Config
 from salman.nats import Session
 from salman.workers.voice import (
     SUBJECTS,
+    cleanup_handler,
     end_recording,
     post_blob,
     segmentation_handler,
     start_recording,
     transcription_handler,
-    cleanup_handler,
 )
 
 
@@ -91,3 +91,53 @@ async def test_voice_detection_worker(get_test_blobs):
             assert (await blobs.keys()) == []
         with pytest.raises(NoKeysError):
             assert (await segments.keys()) == []
+
+
+@pytest.mark.parametrize("get_test_blobs", ["conversations/silent"], indirect=True)
+@pytest.mark.asyncio
+async def test_voice_detection_worker_with_null_stream(get_test_blobs):
+    async with Session(Config.NATS_URL) as mgr:
+        await mgr.add_stream("test_stream", SUBJECTS)
+        segmentation_task = asyncio.create_task(segmentation_handler())
+        transcription_task = asyncio.create_task(transcription_handler())
+        cleanup_task = asyncio.create_task(cleanup_handler())
+
+        segments = []
+        transcripts = []
+
+        async def on_segment(msg):
+            segments.append(loads(msg.data.decode()))
+            await msg.ack()
+
+        async def on_transcript(msg):
+            transcripts.append(loads(msg.data.decode()))
+            await msg.ack()
+
+        async def segmentation_done(msg):
+            segmentation_task.cancel()
+
+        async def transcription_done(msg):
+            transcription_task.cancel()
+            await asyncio.sleep(1)
+            cleanup_task.cancel()
+
+        await mgr.subscribe("test_stream", "segments.test.*", on_segment)
+        await mgr.subscribe("test_stream", "transcripts.test.*", on_transcript)
+        await mgr.subscribe(
+            "test_stream", "segmenting.test.finished", segmentation_done
+        )
+        await mgr.subscribe(
+            "test_stream", "transcribing.test.finished", transcription_done
+        )
+
+        await start_recording("test")
+        await post_blob("test", 0, get_test_blobs[0])
+        await end_recording("test")
+
+        await segmentation_task
+        assert len(segments) == 0
+
+        await transcription_task
+        assert len(transcripts) == 0
+
+        await cleanup_task

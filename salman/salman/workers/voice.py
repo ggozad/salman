@@ -139,7 +139,6 @@ async def transcription_handler():
                     f"transcripts.{recording_id}.{transcript_count}",
                     dumps(segment_timeline).encode(),
                 )
-
                 if (
                     total_segments is not None
                     and transcript_count == total_segments - 1
@@ -166,6 +165,14 @@ async def transcription_handler():
                 nonlocal total_segments
                 segments = loads(msg.data.decode())
                 total_segments = len(segments)
+                if total_segments == 0:
+                    await end_sub.unsubscribe()
+                    await segment_sub.unsubscribe()
+                    await mgr.publish(
+                        f"transcribing.{recording_id}.finished",
+                        recording_id.encode(),
+                    )
+                msg.ack()
 
             end_sub = await mgr.subscribe(
                 Config.VOICE_STREAM, "segmenting.*.finished", cb=on_segmenting_finished
