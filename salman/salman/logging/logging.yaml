@@ -20,4 +20,4 @@ loggers:
 
 root:
   level: INFO
-  handlers: [console]
+  handlers: []

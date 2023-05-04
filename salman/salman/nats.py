@@ -14,24 +14,27 @@ class Session:
         self.url = url
 
     async def __aenter__(self):
-        self._nc = await nats.connect(self.url)
-        self._js = self._nc.jetstream()
-        self._handle_signals()
+        await self.start()
         return self
 
     async def __aexit__(self, *args):
         await self.stop()
+
+    async def start(self) -> None:
+        self._nc = await nats.connect(self.url)
+        self._js = self._nc.jetstream()
+        self._handle_signals()
+
+    async def stop(self) -> None:
+        await self._nc.close()
+        if self._done and not self._done.done():
+            self._done.set_result(True)
 
     async def run_forever(self) -> None:
         try:
             await self._done
         except asyncio.CancelledError:
             await self._nc.close()
-
-    async def stop(self) -> None:
-        await self._nc.close()
-        if self._done and not self._done.done():
-            self._done.set_result(True)
 
     def _handle_signals(self) -> None:
         def signal_handler():
