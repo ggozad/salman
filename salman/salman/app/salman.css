@@ -1,8 +1,43 @@
-Screen {
+#container {
+    overflow-y: auto;
+    padding: 1;
 }
+
+ChatItem {
+    padding: 1;
+    padding-bottom: 0;
+    width: 100w;
+}
+
+ChatItem .chatItem {
+    width: 100w;
+    height: auto;
+}
+
+ChatItem .author {
+    color: $secondary;
+    width: 10%;
+    padding: 1;
+}
+
+ChatItem .me {
+    background: $panel;
+    align: right top;
+}
+
+ChatItem .salman {
+    background: $panel-lighten-1;
+    align: left top;
+}
+
+
+ChatItem .text {
+    width: 90%;
+    padding: 1;
+}
+
 PromptWidget {
-    layout: horizontal;
-    background: $boost;
+    background: $panel;
     height: 5;
     margin: 1;
     padding: 1;
