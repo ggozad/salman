@@ -4,10 +4,10 @@ import uuid
 
 from pydub import AudioSegment
 from textual import on
-from textual.app import App, ComposeResult
-from textual.containers import ScrollableContainer
+from textual.app import ComposeResult
+from textual.containers import Horizontal
 from textual.reactive import reactive
-from textual.widgets import Button, Footer, Header, Input, Static
+from textual.widgets import Button, Input, Static
 
 from salman.config import Config
 from salman.nats import Session
@@ -84,30 +84,10 @@ class PromptWidget(Static):
         btn.variant = "error" if self.is_recording else "primary"
 
     def compose(self) -> ComposeResult:
-        """Create child widgets of a stopwatch."""
-        yield Button(label="Record", id="recordButton", variant="primary")
-        yield Input(
-            placeholder="Your prompt here",
-            id="promptInput",
-        )
-
-
-class Salman(App):
-    """Salman the command line personal assistant."""
-
-    CSS_PATH = "salman.css"
-    BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
-
-    def compose(self) -> ComposeResult:
-        """Create child widgets for the app."""
-        yield Header()
-        yield Footer()
-        yield ScrollableContainer(PromptWidget(), id="container")
-
-    def action_toggle_dark(self) -> None:
-        """An action to toggle dark mode."""
-        self.dark = not self.dark
-
-
-if __name__ == "__main__":
-    Salman().run()
+        """Human prompt."""
+        with Horizontal():
+            yield Button(label="Record", id="recordButton", variant="primary")
+            yield Input(
+                placeholder="Your prompt here",
+                id="promptInput",
+            )

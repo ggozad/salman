@@ -1,6 +1,6 @@
 import typer
 
-from salman.app.app import Salman
+from salman.app.salman import Salman
 
 app = typer.Typer()
 
