@@ -45,17 +45,17 @@ services:
     volumes:
       - ./volumes/.cache:/home/salman/.cache
 
-  frontend:
-    container_name: frontend
-    image: salman-frontend:dev
-    build:
-      context: ./frontend
-      dockerfile: docker/Dockerfile
-    env_file:
-      - ./config/nats.env
-    volumes:
-      - ./frontend:/app
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/npm:/home/node/.npm
-    restart: always
-    ports:
-      - 3000:3000
+  # frontend:
+  #   container_name: frontend
+  #   image: salman-frontend:dev
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: docker/Dockerfile
+  #   env_file:
+  #     - ./config/nats.env
+  #   volumes:
+  #     - ./frontend:/app
+  #     - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/npm:/home/node/.npm
+  #   restart: always
+  #   ports:
+  #     - 3000:3000

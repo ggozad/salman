@@ -5,19 +5,19 @@ formatters:
 handlers:
   console:
     class: logging.StreamHandler
-    level: DEBUG
+    level: INFO
     formatter: simple
     stream: ext://sys.stdout
 loggers:
   transcription:
-    level: DEBUG
+    level: INFO
     handlers: [console]
     propagate: no
   segmentation:
-    level: DEBUG
+    level: INFO
     handlers: [console]
     propagate: no
 
 root:
-  level: DEBUG
+  level: INFO
   handlers: [console]

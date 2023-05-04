@@ -9,7 +9,6 @@ readme = "README.md"
 python = "^3.9"
 langchain = "^0.0.135"
 python-dotenv = "^1.0.0"
-typer = {version = "^0.7.0", extras = ["all"]}
 anthropic = "^0.2.6"
 google-search-results = "^2.4.2"
 llvmlite = "^0.39.1"
@@ -22,6 +21,9 @@ hmmlearn = {git = "https://github.com/hmmlearn/hmmlearn.git"}
 pyannote-audio = "^2.1.1"
 nats-py = "^2.2.0"
 pyaudio = "^0.2.13"
+typer = "^0.9.0"
+rich = "^13.3.5"
+textual = {version = "^0.23.0", extras = ["dev"]}
 
 
 [tool.poetry.group.dev.dependencies]
