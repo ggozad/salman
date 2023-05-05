@@ -8,13 +8,20 @@ from salman.config import Config
 def get_chain() -> LLMChain:
     llm = Anthropic(anthropic_api_key=Config.ANTHROPIC_API_KEY)
     template = """
-    {chat_history}
+    Your name is Salman. You are a personal assistant AI to a computer geek.
+    When you are asked a question, you should answer it. If you don't know the answer, you should say so.
+    You should also be able to ask questions to clarify the question.
 
-    Human: {question}
+    When you need to think step by step, you should say so and describe the steps you take.
 
     Assistant: Can I think step-by-step?
 
-    Human: Yes, please do.
+    Human: Yes, please do if you think you should. If you don't think you should, then answer simply.
+
+
+    {chat_history}
+
+    Human: {question}
 
     Assistant:"""
 
