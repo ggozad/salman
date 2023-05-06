@@ -22,6 +22,11 @@ class AppConfig:
     NATS_URL: str = "localhost"
     VOICE_STREAM: str = "voice"
     HUMAN: str
+    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_DATABASE: str = "salman"
+    NEO4J_USER: str = "neo4j"
+    NEO4J_PASSWORD: str = ""
+
     """
     Map environment variables to class fields according to these rules:
       - Field won't be parsed unless it has a type annotation

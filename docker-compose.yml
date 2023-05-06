@@ -12,6 +12,17 @@ services:
     volumes:
       - ./volumes/nats:/tmp/nats/jetstream
 
+  neo4j:
+    container_name: neo4j
+    image: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ./volumes/neo4j/data:/data
+      - ./volumes/neo4j/plugins:/plugins
+      - ./config/neo4j.conf:/conf/neo4j.conf
+
   transcriber:
     container_name: transcriber
     image: salman:dev

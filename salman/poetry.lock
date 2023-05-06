@@ -2031,6 +2031,24 @@ files = [
 nkeys = ["nkeys"]
 
 [[package]]
+name = "neo4j"
+version = "5.8.0"
+description = "Neo4j Bolt driver for Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "neo4j-5.8.0.tar.gz", hash = "sha256:af5e70801f63eaaff8fa90bfdc943c144fb6857438590782b30d0ed745229b9e"},
+]
+
+[package.dependencies]
+pytz = "*"
+
+[package.extras]
+numpy = ["numpy (>=1.7.0,<2.0.0)"]
+pandas = ["numpy (>=1.7.0,<2.0.0)", "pandas (>=1.1.0,<3.0.0)"]
+
+[[package]]
 name = "networkx"
 version = "2.8.8"
 description = "Python package for creating and manipulating graphs and networks"
@@ -4488,4 +4506,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "54885163a609d484561aec9937f3f63af910f95a5f2eee68352bf78709393b7f"
+content-hash = "be889c7501f5291a81529aa0fc6c68787518a3b6444bf0e4bf4371aa24cd1aff"
