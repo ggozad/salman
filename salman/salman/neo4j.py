@@ -36,9 +36,7 @@ def create_node(model: BaseModel):
 
 
 def create_relationship(
-    start_node_id: int,
-    end_node_id: int,
-    relationship_type: str,
+    start_node_id: int, end_node_id: int, relationship_type: str, params: dict = {}
 ) -> None:
     with Neo4jSession() as neo:
         return neo.query(
@@ -46,10 +44,11 @@ def create_relationship(
             MATCH (a), (b)
             WHERE id(a) = $start_node_id AND id(b) = $end_node_id
             WITH a, b
-            MERGE (a)-[:{relationship_type}]->(b)
+            CREATE (a)-[:{relationship_type} $params]->(b)
             """,
             {
                 "start_node_id": start_node_id,
                 "end_node_id": end_node_id,
+                "params": params,
             },
         )

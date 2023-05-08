@@ -3,6 +3,16 @@ from pydantic import BaseModel
 from salman.neo4j import Neo4jSession, create_node, create_relationship
 
 
+def predicate_to_label(predicate: str):
+    """
+    Return the predicate as a label, using only A-Z characters and underscores.
+    """
+    predicate = predicate.replace(" ", "_")
+    return "".join(
+        [char for char in predicate.upper() if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ_"]
+    )
+
+
 class Object(BaseModel):
     id: int | None = None
     name: str
@@ -38,10 +48,11 @@ class Subject(BaseModel):
         create_relationship(
             start_node_id=self.id,
             end_node_id=obj.id,
-            relationship_type=predicate,
+            relationship_type=predicate_to_label(predicate),
+            params={"name": predicate},
         )
 
-    def get_triplets(self):
+    def get_triples(self):
         with Neo4jSession() as neo:
             records = neo.query(
                 f"""
@@ -51,7 +62,7 @@ class Subject(BaseModel):
             return set(
                 [
                     (
-                        record["p"].type,
+                        record["p"]["name"],
                         record["o"]["name"],
                     )
                     for record in records
@@ -74,7 +85,7 @@ class Subject(BaseModel):
             )
 
 
-def create_knowledge_triplet(
+def create_semantic_triple(
     subject: Subject,
     predicate: str,
     obj: Object,
@@ -89,7 +100,8 @@ def create_knowledge_triplet(
     create_relationship(
         start_node_id=subject.id,
         end_node_id=obj.id,
-        relationship_type=predicate,
+        relationship_type=predicate_to_label(predicate),
+        params={"name": predicate},
     )
     return (subject, predicate, obj)
 
