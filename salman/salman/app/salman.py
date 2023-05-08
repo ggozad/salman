@@ -5,6 +5,7 @@ from textual.containers import Container
 from textual.widgets import Footer, Header, Input
 
 from salman.app.chat import Author, ChatItem
+from salman.app.debug import DebugLog
 from salman.app.prompt import PromptWidget
 from salman.llm import get_chain
 
@@ -13,7 +14,11 @@ class Salman(App):
     """Salman the command line personal assistant."""
 
     CSS_PATH = "salman.css"
-    BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
+    BINDINGS = [
+        ("d", "toggle_dark", "Toggle dark mode"),
+        ("l", "toggle_log", "Show/Hide debug log"),
+    ]
+
     llm_chain = get_chain()
 
     async def get_llm_reponse(self, text: str) -> str:
@@ -41,6 +46,7 @@ class Salman(App):
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header()
+        yield DebugLog(id="debug")
         with Container(id="container"):
             yield ChatItem(text="Hello, how can I help?", author=Author.SALMAN)
         yield PromptWidget()
@@ -49,3 +55,17 @@ class Salman(App):
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark = not self.dark
+
+    def action_toggle_log(self) -> None:
+        """An action to toggle the debug log."""
+        log = self.query_one("#debug")
+        log.has_class("show")
+        if log.has_class("show"):
+            log.remove_class("show")
+        else:
+            log.add_class("show")
+
+    def write_log(self, text: str) -> None:
+        """Log a message to the debug log."""
+        text_log: DebugLog = self.query_one("#debug")
+        text_log.write(text)
