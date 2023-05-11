@@ -67,4 +67,18 @@ class SalmanAI:
 
         # Find all requests for knowledge
         request_info = [n.text for n in root.findall("request_info")]
-        return dict(response=response or "", facts=facts, request_info=request_info)
+        try:
+            for info in request_info:
+                subject = Subject(name=info)
+                triples = subject.get_triples()
+                print(subject.name)
+                print(triples)
+
+        except Exception as e:
+            print(e)
+            triples = []
+        return dict(
+            response=response or "",
+            facts=facts,
+            request_info=request_info,
+        )
