@@ -19,12 +19,25 @@ class Object(BaseModel):
 
     @property
     def labels(self):
-        return ["Object", self.name]
+        return ["Object"]
 
 
 class Subject(BaseModel):
     id: int | None = None
     name: str
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        with Neo4jSession() as neo:
+            records = neo.query(
+                """
+                MATCH (s:Subject)
+                WHERE s.name = $name
+                RETURN s, id(s)""",
+                {"name": self.name},
+            )
+            if records:
+                self.id = records[0]["id(s)"]
 
     @property
     def labels(self):
@@ -32,18 +45,17 @@ class Subject(BaseModel):
 
     def save(self):
         with Neo4jSession() as neo:
-            res = neo.query(
-                f"""
-                MERGE (s:Subject:{self.name})
-                SET s.name = $name
-                RETURN s, id(s)""",
-                parameters={"name": self.name},
-            )
-            self.id = res[0]["id(s)"]
+            if not self.id:
+                res = neo.query(
+                    """
+                    CREATE (s:Subject)
+                    SET s.name = $name
+                    RETURN s, id(s)""",
+                    parameters={"name": self.name},
+                )
+                self.id = res[0]["id(s)"]
 
     def add_relationship(self, predicate: str, obj: Object):
-        if not self.id:
-            self.save()
         obj.id = create_node(obj)
         create_relationship(
             start_node_id=self.id,
@@ -55,9 +67,10 @@ class Subject(BaseModel):
     def get_triples(self):
         with Neo4jSession() as neo:
             records = neo.query(
-                f"""
-                MATCH (s:Subject:{self.name})-[p]-(o)
-                RETURN s,p,o"""
+                """
+                MATCH (s:Subject)-[p]-(o) WHERE s.name=$name
+                RETURN s,p,o""",
+                {"name": self.name},
             )
             return set(
                 [
@@ -69,31 +82,13 @@ class Subject(BaseModel):
                 ]
             )
 
-    @classmethod
-    def from_subject(cls, subject: str):
-        with Neo4jSession() as neo:
-            records = neo.query(
-                f"""
-                MATCH (s:Subject:{subject})
-                RETURN s, id(s)"""
-            )
-            if not records:
-                return cls(name=subject)
-            return cls(
-                id=records[0]["id(s)"],
-                name=records[0]["s"]["name"],
-            )
-
 
 def create_semantic_triple(
     subject: Subject,
     predicate: str,
     obj: Object,
 ) -> None:
-    saved = Subject.from_subject(subject.name)
-    if saved:
-        subject.id = saved.id
-    else:
+    if subject.id is None:
         subject.save()
 
     obj.id = create_node(obj)
@@ -109,17 +104,21 @@ def create_semantic_triple(
 def delete_subject(subject: Subject):
     with Neo4jSession() as neo:
         neo.query(
-            f"""
-            MATCH (s:Subject:{subject.name})-[p]-(o)
-            DELETE s,p,o"""
+            """
+            MATCH (s:Subject)-[p]-(o)
+            WHERE s.name = $name
+            DELETE s,p,o""",
+            {"name": subject.name},
         )
 
 
 def get_subject(subject: Subject):
     with Neo4jSession() as neo:
         records = neo.query(
-            f"""
-            MATCH (s:Subject:{subject.name})-[p]-(o)
-            RETURN s,p,o, id(s)"""
+            """
+            MATCH (s:Subject)-[p]-(o)
+            WHERE s.name = $name
+            RETURN s,p,o, id(s)""",
+            {"name": subject.name},
         )
         return records
