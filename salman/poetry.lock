@@ -158,14 +158,14 @@ tz = ["python-dateutil"]
 
 [[package]]
 name = "anthropic"
-version = "0.2.7"
+version = "0.2.8"
 description = "Library for accessing the anthropic API"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "anthropic-0.2.7-py3-none-any.whl", hash = "sha256:b5d807b54c43ad4812a82b8389412507d62574b06af79c25dc2433233f1ab50f"},
-    {file = "anthropic-0.2.7.tar.gz", hash = "sha256:dafdd617c79122bb97bc53634519e8dcba17b7e765a5a2372c77f6e3744127e5"},
+    {file = "anthropic-0.2.8-py3-none-any.whl", hash = "sha256:7a11da8a3d8cb52835912e73d42e9245e7949155f4afb7093496f100a9bf610b"},
+    {file = "anthropic-0.2.8.tar.gz", hash = "sha256:d2629d7e26415bcce2ed0fdff0096a3fdd861099a73a1351ee705511d1c2ea6e"},
 ]
 
 [package.dependencies]

@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from textual.app import App, ComposeResult
 from textual.containers import Container
@@ -7,7 +8,7 @@ from textual.widgets import Footer, Header, Input
 from salman.app.chat import Author, ChatItem
 from salman.app.debug import DebugLog
 from salman.app.prompt import PromptWidget
-from salman.llm import get_chain
+from salman.llm.anthropic import SalmanAI
 
 
 class Salman(App):
@@ -19,13 +20,17 @@ class Salman(App):
         ("l", "toggle_log", "Show/Hide debug log"),
     ]
 
-    llm_chain = get_chain()
+    assistant = SalmanAI()
 
     async def get_llm_reponse(self, text: str) -> str:
         """Get a response from the LLM chain."""
-        await asyncio.sleep(0.5)
-        response = self.llm_chain.run(text)
-        item = ChatItem(text=response, author=Author.SALMAN)
+        await asyncio.sleep(0.1)
+
+        async for data in await self.assistant.chat(text):
+            response = data
+            print(response)
+        self.write_log(json.dumps(response), format="json")
+        item = ChatItem(text=response.get("completion"), author=Author.SALMAN)
         container = self.query_one("#container")
         container.mount(item)
         item.scroll_visible()
@@ -65,7 +70,7 @@ class Salman(App):
         else:
             log.add_class("show")
 
-    def write_log(self, text: str) -> None:
+    def write_log(self, text: str, format="text") -> None:
         """Log a message to the debug log."""
         text_log: DebugLog = self.query_one("#debug")
-        text_log.write(text)
+        text_log.write(text, format=format)

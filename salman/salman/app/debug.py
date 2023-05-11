@@ -10,6 +10,7 @@ class DebugLog(Widget):
             text,
             format,
             indent_guides=True,
+            word_wrap=True,
         )
         text_log: TextLog = self.query_one("TextLog")
         text_log.write(syntax, expand=True)
