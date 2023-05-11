@@ -12,15 +12,20 @@ class SalmanAI:
         self,
         prompt: str,
         max_tokens_to_sample=256,
-        temperature=1.0,
+        temperature=0.0,
+        stream=True,
     ) -> str:
-        return await self.client.acompletion_stream(
+        kwargs = dict(
             prompt=prompt,
             stop_sequences=[anthropic.HUMAN_PROMPT],
             max_tokens_to_sample=max_tokens_to_sample,
             model="claude-v1.3",
-            stream=True,
+            temperature=temperature,
         )
+        if stream:
+            return await self.client.acompletion_stream(**kwargs, stream=stream)
+        else:
+            return await self.client.acompletion(**kwargs)
 
     async def chat(self, question: str) -> str:
         prompt = prompts.CHAT_TEMPLATE.format(
@@ -29,4 +34,4 @@ class SalmanAI:
             HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
             AI_PROMPT=anthropic.AI_PROMPT,
         )
-        return await self.completion(prompt=prompt)
+        return await self.completion(prompt=prompt, stream=False)

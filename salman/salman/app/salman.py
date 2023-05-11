@@ -26,9 +26,7 @@ class Salman(App):
         """Get a response from the LLM chain."""
         await asyncio.sleep(0.1)
 
-        async for data in await self.assistant.chat(text):
-            response = data
-            print(response)
+        response = await self.assistant.chat(text)
         self.write_log(json.dumps(response), format="json")
         item = ChatItem(text=response.get("completion"), author=Author.SALMAN)
         container = self.query_one("#container")
