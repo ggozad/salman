@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 import anthropic
 
@@ -37,6 +38,7 @@ class SalmanAI:
             memories="\n".join([f"{anthropic.HUMAN_PROMPT}{m}." for m in memories]),
             HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
             AI_PROMPT=anthropic.AI_PROMPT,
+            datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 
         response = await self.completion(prompt=prompt, stream=False)
@@ -78,18 +80,11 @@ class SalmanAI:
         request_info = [n.text for n in root.findall("request_info")]
 
         memories = []
-        try:
-            for info in request_info:
-                subject = Node(name=info)
-                triples = subject.get_triples()
-                for triple in triples:
-                    memories.append(" ".join([subject.name, *triple]))
-                print(subject.name)
-                print(triples)
-            print(memories)
-        except Exception as e:
-            print(e)
-            triples = []
+        for info in request_info:
+            subject = Node(name=info)
+            triples = subject.get_triples()
+            for triple in triples:
+                memories.append(" ".join([subject.name, *triple]))
 
         if memories:
             return await self.chat(question, memories=memories)
