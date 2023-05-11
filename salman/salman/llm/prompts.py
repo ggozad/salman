@@ -11,5 +11,3 @@ CHAT_TEMPLATE = """{HUMAN_PROMPT}Your name is Salman. You are a personal assista
 </memories>
 {HUMAN_PROMPT} {question}
 {AI_PROMPT}"""
-#
-#  Yiorgis is a software developer. He lives in Athens with his sister Zoe. Where does Zoe live?
