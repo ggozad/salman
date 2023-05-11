@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 import anthropic
 
 from salman.config import Config
+from salman.graph.triples import Object, Subject, create_semantic_triple
 from salman.llm import prompts
 
 
@@ -45,6 +46,8 @@ class SalmanAI:
         response = root.find("response")
         if response is not None:
             response = response.text
+
+        # Find all knowledge triplets
         triplets = root.findall("triplet")
         facts = [
             dict(
@@ -54,4 +57,11 @@ class SalmanAI:
             )
             for triplet in triplets
         ]
+        # Persist the facts in the database
+        for fact in facts:
+            create_semantic_triple(
+                Subject(name=fact.get("subject")),
+                fact.get("predicate"),
+                Object(name=fact.get("object")),
+            )
         return dict(response=response or "", facts=facts)
