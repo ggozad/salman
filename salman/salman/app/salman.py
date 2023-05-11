@@ -28,10 +28,19 @@ class Salman(App):
 
         response = await self.assistant.chat(text)
         self.write_log(json.dumps(response), format="json")
-        item = ChatItem(text=response.get("completion"), author=Author.SALMAN)
-        container = self.query_one("#container")
-        container.mount(item)
-        item.scroll_visible()
+        for fact in response.get("facts", []):
+            text = f"💡 TIL: {fact.get('subject')} {fact.get('predicate')} {fact.get('object')}"
+            print(text)
+
+            item = ChatItem(text=text, author=Author.SALMAN_THOUGHT)
+            container = self.query_one("#container")
+            container.mount(item)
+            item.scroll_visible()
+        if response.get("response"):
+            item = ChatItem(text=response.get("response"), author=Author.SALMAN)
+            container = self.query_one("#container")
+            container.mount(item)
+            item.scroll_visible()
         prompt = self.query_one("#promptInput")
         prompt.disabled = False
 

@@ -23,13 +23,18 @@ ChatItem .author {
     padding: 1;
 }
 
-ChatItem .me {
+ChatItem .USER {
     background: $panel;
     align: right top;
 }
 
-ChatItem .salman {
+ChatItem .SALMAN {
     background: $panel-lighten-1;
+    align: left top;
+}
+
+ChatItem .SALMAN_THOUGHT {
+    background: $primary-lighten-3;
     align: left top;
 }
 

@@ -1,3 +1,5 @@
+import xml.etree.ElementTree as ET
+
 import anthropic
 
 from salman.config import Config
@@ -34,4 +36,22 @@ class SalmanAI:
             HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
             AI_PROMPT=anthropic.AI_PROMPT,
         )
-        return await self.completion(prompt=prompt, stream=False)
+
+        response = await self.completion(prompt=prompt, stream=False)
+        return self.parse_response(response.get("completion"))
+
+    def parse_response(self, response: str) -> dict:
+        root = ET.fromstring(f"<root>{response}</root>")
+        response = root.find("response")
+        if response is not None:
+            response = response.text
+        triplets = root.findall("triplet")
+        facts = [
+            dict(
+                subject=triplet.find("subject").text,
+                predicate=triplet.find("predicate").text,
+                object=triplet.find("object").text,
+            )
+            for triplet in triplets
+        ]
+        return dict(response=response or "", facts=facts)

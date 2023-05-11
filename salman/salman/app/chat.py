@@ -9,6 +9,7 @@ from textual.widgets import Static
 class Author(Enum):
     USER = "me"
     SALMAN = "salman"
+    SALMAN_THOUGHT = "salman's thought"
 
 
 class ChatItem(Static):
@@ -22,6 +23,6 @@ class ChatItem(Static):
 
     def compose(self) -> ComposeResult:
         """A chat item."""
-        with Horizontal(classes=f"{self.author.value} chatItem"):
+        with Horizontal(classes=f"{self.author.name} chatItem"):
             yield Static(self.author.value, classes="author")
             yield Static(self.text, classes="text")
