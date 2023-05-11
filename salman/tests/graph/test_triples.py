@@ -1,51 +1,76 @@
 from salman.graph.triples import (
-    Object,
-    Subject,
+    Node,
     create_semantic_triple,
-    delete_subject,
+    delete_node,
 )
 
 
+def test_node():
+    delete_node("test_node")
+    node = Node(name="test_node")
+    assert node.id is None
+    node.save()
+    assert node.id is not None
+
+    node = Node(name="test_node")
+    assert node.id is not None
+    assert node.name == "test_node"
+    assert node.labels == set()
+
+    node.labels.add("label")
+    node.save()
+
+    node = Node(name="test_node")
+    assert node.id is not None
+    assert node.name == "test_node"
+    assert "label" in node.labels
+
+    delete_node("test_node")
+
+
 def test_triples():
-    delete_subject(subject=Subject(name="Salman AI"))
+    delete_node("Test Subject")
+    delete_node("Test Object #1")
+    delete_node("Test Object #2")
+    delete_node("Test Object #3")
 
     # Add a triple, persist it.
     subject, predicate, object = create_semantic_triple(
-        subject=Subject(name="Salman AI"),
+        subject=Node(name="Test Subject"),
         predicate="knows",
-        obj=Object(name="Neo4j"),
+        obj=Node(name="Test Object #1"),
     )
-    assert subject.name == "Salman AI"
+    assert subject.name == "Test Subject"
     assert predicate == "knows"
-    assert object.name == "Neo4j"
+    assert object.name == "Test Object #1"
     assert subject.id is not None
     assert object.id is not None
-
     # Retrieve the triple.
-    subject = Subject(name="Salman AI")
-    assert subject.name == "Salman AI"
+    subject = Node(name="Test Subject")
+    assert subject.name == "Test Subject"
     assert subject.id is not None
 
     # Add another relationship, persist it.
-    subject.add_relationship("knows well", Object(name="Python"))
+    subject.add_relationship("knows well", Node(name="Test Object #2"))
     triples = subject.get_triples()
-    assert triples == {("knows", "Neo4j"), ("knows well", "Python")}
+    assert triples == {("knows", "Test Object #1"), ("knows well", "Test Object #2")}
 
     # Add another triple with new objects, persist it.
     subject, predicate, object = create_semantic_triple(
-        subject=Subject(name="Salman AI"),
+        subject=Node(name="Test Subject"),
         predicate="wants to learn",
-        obj=Object(name="the Rust language"),
+        obj=Node(name="Test Object #3"),
     )
 
     # Retrieve the triples.
     triples = subject.get_triples()
     assert triples == {
-        ("knows", "Neo4j"),
-        ("knows well", "Python"),
-        ("wants to learn", "the Rust language"),
+        ("knows", "Test Object #1"),
+        ("knows well", "Test Object #2"),
+        ("wants to learn", "Test Object #3"),
     }
 
-    delete_subject(subject=Subject(name="Salman AI"))
-    subject = Subject(name="Salman AI")
-    assert subject.id is None
+    delete_node("Test Subject")
+    delete_node("Test Object #1")
+    delete_node("Test Object #2")
+    delete_node("Test Object #3")

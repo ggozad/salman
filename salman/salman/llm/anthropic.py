@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import anthropic
 
 from salman.config import Config
-from salman.graph.triples import Object, Subject, create_semantic_triple
+from salman.graph.triples import Node, create_semantic_triple
 from salman.llm import prompts
 
 
@@ -69,9 +69,9 @@ class SalmanAI:
         # Persist the facts in the database
         for fact in facts:
             create_semantic_triple(
-                Subject(name=fact.get("subject")),
+                Node(name=fact.get("subject")),
                 fact.get("predicate"),
-                Object(name=fact.get("object")),
+                Node(name=fact.get("object")),
             )
 
         # Find all requests for knowledge
@@ -80,7 +80,7 @@ class SalmanAI:
         memories = []
         try:
             for info in request_info:
-                subject = Subject(name=info)
+                subject = Node(name=info)
                 triples = subject.get_triples()
                 for triple in triples:
                     memories.append(" ".join([subject.name, *triple]))
