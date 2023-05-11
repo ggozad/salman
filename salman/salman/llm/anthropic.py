@@ -30,22 +30,31 @@ class SalmanAI:
         else:
             return await self.client.acompletion(**kwargs)
 
-    async def chat(self, question: str) -> str:
+    async def chat(self, question: str, memories=[]) -> str:
         prompt = prompts.CHAT_TEMPLATE.format(
             human=Config.HUMAN,
             question=question,
+            memories="\n".join([f"{anthropic.HUMAN_PROMPT}{m}." for m in memories]),
             HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
             AI_PROMPT=anthropic.AI_PROMPT,
         )
 
         response = await self.completion(prompt=prompt, stream=False)
-        return self.parse_response(response.get("completion"))
+        return await self.parse_response(
+            question, response.get("completion"), terminal=bool(memories)
+        )
 
-    def parse_response(self, response: str) -> dict:
+    async def parse_response(self, question, response: str, terminal=False) -> dict:
         root = ET.fromstring(f"<root>{response}</root>")
         response = root.find("response")
         if response is not None:
             response = response.text
+        if terminal:
+            return dict(
+                response=response or "",
+                facts=[],
+                request_info=[],
+            )
 
         # Find all knowledge triplets
         triplets = root.findall("triplet")
@@ -67,16 +76,24 @@ class SalmanAI:
 
         # Find all requests for knowledge
         request_info = [n.text for n in root.findall("request_info")]
+
+        memories = []
         try:
             for info in request_info:
                 subject = Subject(name=info)
                 triples = subject.get_triples()
+                for triple in triples:
+                    memories.append(" ".join([subject.name, *triple]))
                 print(subject.name)
                 print(triples)
-
+            print(memories)
         except Exception as e:
             print(e)
             triples = []
+
+        if memories:
+            return await self.chat(question, memories=memories)
+
         return dict(
             response=response or "",
             facts=facts,
