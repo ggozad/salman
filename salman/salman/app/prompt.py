@@ -42,7 +42,6 @@ class PromptWidget(Static):
         async def on_transcript(msg):
             text = json.loads(msg.data.decode()).get("text")
             self.text = self.text + text
-            print(text)
             input = self.query_one("#promptInput")
             input.value = self.text
 

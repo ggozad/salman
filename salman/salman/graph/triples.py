@@ -78,7 +78,7 @@ class Subject(BaseModel):
                 RETURN s, id(s)"""
             )
             if not records:
-                return None
+                return cls(name=subject)
             return cls(
                 id=records[0]["id(s)"],
                 name=records[0]["s"]["name"],

@@ -64,4 +64,7 @@ class SalmanAI:
                 fact.get("predicate"),
                 Object(name=fact.get("object")),
             )
-        return dict(response=response or "", facts=facts)
+
+        # Find all requests for knowledge
+        request_info = [n.text for n in root.findall("request_info")]
+        return dict(response=response or "", facts=facts, request_info=request_info)

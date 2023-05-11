@@ -30,8 +30,6 @@ class Salman(App):
         self.write_log(json.dumps(response), format="json")
         for fact in response.get("facts", []):
             text = f"💡 TIL: {fact.get('subject')} {fact.get('predicate')} {fact.get('object')}"
-            print(text)
-
             item = ChatItem(text=text, author=Author.SALMAN_THOUGHT)
             container = self.query_one("#container")
             container.mount(item)
