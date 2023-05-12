@@ -15,7 +15,7 @@ def test_node():
     node = Node(name="test_node")
     assert node.id is not None
     assert node.name == "test_node"
-    assert node.labels == set()
+    assert node.labels == set(["Node"])
 
     node.labels.add("label")
     node.save()
@@ -53,7 +53,10 @@ def test_triples():
     # Add another relationship, persist it.
     subject.add_relationship("knows well", Node(name="Test Object #2"))
     triples = subject.get_triples()
-    assert triples == {("knows", "Test Object #1"), ("knows well", "Test Object #2")}
+    assert triples == {
+        ("Test Subject", "knows", "Test Object #1"),
+        ("Test Subject", "knows well", "Test Object #2"),
+    }
 
     # Add another triple with new objects, persist it.
     subject, predicate, object = create_semantic_triple(
@@ -65,9 +68,9 @@ def test_triples():
     # Retrieve the triples.
     triples = subject.get_triples()
     assert triples == {
-        ("knows", "Test Object #1"),
-        ("knows well", "Test Object #2"),
-        ("wants to learn", "Test Object #3"),
+        ("Test Subject", "knows", "Test Object #1"),
+        ("Test Subject", "knows well", "Test Object #2"),
+        ("Test Subject", "wants to learn", "Test Object #3"),
     }
 
     delete_node("Test Subject")

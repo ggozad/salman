@@ -1,6 +1,9 @@
 from pydantic import BaseModel
+import spacy
 
 from salman.neo4j import Neo4jSession, create_relationship
+
+_nlp = spacy.load("en_core_web_sm")
 
 
 def predicate_to_label(predicate: str):
@@ -16,7 +19,7 @@ def predicate_to_label(predicate: str):
 class Node(BaseModel):
     id: int | None = None
     name: str
-    labels: set[str] = set()
+    labels: set[str] = set(["Node"])
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -68,22 +71,28 @@ class Node(BaseModel):
         )
 
     def get_triples(self):
+        doc = _nlp(self.name)
+        tokens = [token.text for token in doc if token.pos_ in ["NOUN", "PROPN", "ADJ"]]
+        result = set([])
         with Neo4jSession() as neo:
-            records = neo.query(
-                """
-                MATCH (s)-[p]-(o) WHERE s.name=$name
-                RETURN s,p,o""",
-                {"name": self.name},
-            )
-            return set(
-                [
-                    (
-                        record["p"]["name"],
-                        record["o"]["name"],
-                    )
-                    for record in records
-                ]
-            )
+            for token in tokens:
+                records = neo.query(
+                    """
+                    MATCH (s)-[p]->(o) WHERE s.name CONTAINS $name
+                    RETURN s,p,o""",
+                    {"name": token},
+                )
+                result.update(
+                    [
+                        (
+                            record["s"]["name"],
+                            record["p"]["name"],
+                            record["o"]["name"],
+                        )
+                        for record in records
+                    ]
+                )
+        return result
 
 
 def create_semantic_triple(
@@ -118,12 +127,18 @@ def delete_node(name: str):
 
 
 def get_subject(subject: Node):
+    doc = _nlp(subject.name)
+    tokens = [token.text for token in doc if token.pos_ in ["NOUN", "PROPN", "ADJ"]]
+    result = set([])
     with Neo4jSession() as neo:
-        records = neo.query(
-            """
-            MATCH (s)-[p]-(o)
-            WHERE s.name = $name
-            RETURN s,p,o, id(s)""",
-            {"name": subject.name},
-        )
-        return records
+        for token in tokens:
+            records = neo.query(
+                """
+                MATCH (s)-[p]-(o)
+                WHERE s.name CONTAINS $name
+                RETURN s,p,o, id(s)""",
+                {"name": token},
+            )
+            result.update(records)
+    print(result)
+    return result

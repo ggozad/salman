@@ -85,7 +85,7 @@ class SalmanAI:
             subject = Node(name=info)
             triples = subject.get_triples()
             for triple in triples:
-                memories.append(" ".join([subject.name, *triple]))
+                memories.append(" ".join(triple))
 
         if memories:
             return await self.chat(question, memories=memories)
