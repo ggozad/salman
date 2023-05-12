@@ -23,7 +23,7 @@ class SalmanAI:
             prompt=prompt,
             stop_sequences=[anthropic.HUMAN_PROMPT],
             max_tokens_to_sample=max_tokens_to_sample,
-            model="claude-v1.3",
+            model="claude-v1",
             temperature=temperature,
         )
         if stream:
@@ -43,19 +43,20 @@ class SalmanAI:
 
         response = await self.completion(prompt=prompt, stream=False)
         return await self.parse_response(
-            question, response.get("completion"), terminal=bool(memories)
+            question, response.get("completion"), memories=memories
         )
 
-    async def parse_response(self, question, response: str, terminal=False) -> dict:
+    async def parse_response(self, question, response: str, memories=[]) -> dict:
         root = ET.fromstring(f"<root>{response}</root>")
         response = root.find("response")
         if response is not None:
             response = response.text
-        if terminal:
+        if memories:
             return dict(
                 response=response or "",
                 facts=[],
                 request_info=[],
+                memories=memories,
             )
 
         # Find all knowledge triplets
@@ -93,4 +94,5 @@ class SalmanAI:
             response=response or "",
             facts=facts,
             request_info=request_info,
+            memories=memories,
         )
