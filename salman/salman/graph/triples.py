@@ -1,5 +1,5 @@
-from pydantic import BaseModel
 import spacy
+from pydantic import BaseModel
 
 from salman.neo4j import Neo4jSession, create_relationship
 
@@ -126,19 +126,23 @@ def delete_node(name: str):
         )
 
 
-def get_subject(subject: Node):
-    doc = _nlp(subject.name)
+def get_facts_for_subject(subject: str) -> set[str]:
+    doc = _nlp(subject)
     tokens = [token.text for token in doc if token.pos_ in ["NOUN", "PROPN", "ADJ"]]
-    result = set([])
+    results = set([])
+    facts = set([])
     with Neo4jSession() as neo:
         for token in tokens:
             records = neo.query(
                 """
-                MATCH (s)-[p]-(o)
-                WHERE s.name CONTAINS $name
-                RETURN s,p,o, id(s)""",
+                    MATCH (s)-[p]-(o)
+                    WHERE s.name CONTAINS $name
+                    RETURN s,p,o, id(s)""",
                 {"name": token},
             )
-            result.update(records)
-    print(result)
-    return result
+            results.update(records)
+    for record in results:
+        node = Node(name=record["s"]["name"])
+        for triple in node.get_triples():
+            facts.add(" ".join(triple))
+    return facts

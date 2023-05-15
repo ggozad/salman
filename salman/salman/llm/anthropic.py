@@ -4,7 +4,7 @@ from datetime import datetime
 import anthropic
 
 from salman.config import Config
-from salman.graph.triples import Node, create_semantic_triple
+from salman.graph.triples import Node, create_semantic_triple, get_facts_for_subject
 from salman.llm import prompts
 
 
@@ -80,15 +80,11 @@ class SalmanAI:
         # Find all requests for knowledge
         request_info = [n.text for n in root.findall("request_info")]
 
-        memories = []
+        memories = set([])
         for info in request_info:
-            subject = Node(name=info)
-            triples = subject.get_triples()
-            for triple in triples:
-                memories.append(" ".join(triple))
-
+            memories.update(get_facts_for_subject(info))
         if memories:
-            return await self.chat(question, memories=memories)
+            return await self.chat(question, memories=list(memories))
 
         return dict(
             response=response or "",
