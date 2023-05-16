@@ -5,7 +5,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.widgets import Footer, Header, Input
 
-from salman.app.chat import Author, ChatItem
+from salman.app.chat import Author, ChatItem, FactItem
 from salman.app.debug import DebugLog
 from salman.app.prompt import PromptWidget
 from salman.llm.anthropic import SalmanAI
@@ -29,11 +29,14 @@ class Salman(App):
         response = await self.assistant.chat(text)
         self.write_log(json.dumps(response), format="json")
         for fact in response.get("facts", []):
-            text = f"💡 TIL: {fact.get('subject')} {fact.get('predicate')} {fact.get('object')}"
-            item = ChatItem(text=text, author=Author.SALMAN_THOUGHT)
-            container = self.query_one("#container")
-            container.mount(item)
-            item.scroll_visible()
+            print(fact)
+            try:
+                item = FactItem(fact)
+                container = self.query_one("#container")
+                container.mount(item)
+                item.scroll_visible()
+            except Exception as e:
+                print(e)
         if response.get("response"):
             item = ChatItem(text=response.get("response"), author=Author.SALMAN)
             container = self.query_one("#container")

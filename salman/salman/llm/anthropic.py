@@ -4,7 +4,7 @@ from datetime import datetime
 import anthropic
 
 from salman.config import Config
-from salman.graph.triples import Node, create_semantic_triple, get_facts_for_subject
+from salman.graph.triples import get_facts_for_subject
 from salman.llm import prompts
 
 
@@ -69,13 +69,6 @@ class SalmanAI:
             )
             for triplet in triplets
         ]
-        # Persist the facts in the database
-        for fact in facts:
-            create_semantic_triple(
-                Node(name=fact.get("subject")),
-                fact.get("predicate"),
-                Node(name=fact.get("object")),
-            )
 
         # Find all requests for knowledge
         request_info = [n.text for n in root.findall("request_info")]

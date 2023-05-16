@@ -6,42 +6,49 @@ Screen {
     padding: 1;
 }
 
-ChatItem {
+ChatItem, FactItem {
     padding: 1;
     padding-bottom: 0;
-    width: 100w;
 }
 
-ChatItem .chatItem {
-    width: 100w;
+
+ChatItem .chatItem, FactItem .chatItem {
     height: auto;
 }
 
-ChatItem .author {
-    color: $secondary;
+ChatItem .author, FactItem .author {
+    dock: left;
     width: 10%;
     padding: 1;
+    color: $secondary;
 }
 
 ChatItem .USER {
     background: $panel;
-    align: right top;
 }
 
 ChatItem .SALMAN {
     background: $panel-lighten-1;
-    align: left top;
 }
 
-ChatItem .SALMAN_THOUGHT {
+FactItem .SALMAN_THOUGHT {
     background: $primary-lighten-3;
-    align: left top;
 }
 
 
-ChatItem .text {
-    width: 90%;
-    padding: 1;
+ChatItem .text, FactItem .text {
+    margin: 1;
+}
+
+FactItem .buttons {
+    dock: right; 
+    width: auto;
+    height: 4;
+    margin-top: 1;
+}
+
+FactItem Button {
+    margin-right: 2;
 }
 
 PromptWidget {
