@@ -83,8 +83,11 @@ class SalmanAI:
         memories = set([])
         for info in request_info:
             memories.update(get_facts_for_subject(info))
+        # Convert to list to make it JSON serializable
+        memories = list(memories)
+
         if memories:
-            return await self.chat(question, memories=list(memories))
+            return await self.chat(question, memories=memories)
 
         return dict(
             response=response or "",
