@@ -30,6 +30,7 @@ services:
     env_file:
       - ./secrets/keys.env
       - ./config/nats.env
+      - ./config/salman.env
     entrypoint: workers transcription-worker
     volumes:
       - ./volumes/.cache:/home/salman/.cache
@@ -41,6 +42,7 @@ services:
     env_file:
       - ./secrets/keys.env
       - ./config/nats.env
+      - ./config/salman.env
     entrypoint: workers segmentation-worker
     volumes:
       - ./volumes/.cache:/home/salman/.cache
@@ -52,6 +54,7 @@ services:
     env_file:
       - ./secrets/keys.env
       - ./config/nats.env
+      - ./config/salman.env
     entrypoint: workers cleanup-worker
     volumes:
       - ./volumes/.cache:/home/salman/.cache
