@@ -4,7 +4,6 @@ from datetime import datetime
 import anthropic
 
 from salman.config import Config
-from salman.graph.triples import get_facts_for_subject
 from salman.llm import prompts
 
 
@@ -46,18 +45,11 @@ class SalmanAI:
             question, response.get("completion"), memories=memories
         )
 
-    async def parse_response(self, question, response: str, memories=[]) -> dict:
-        root = ET.fromstring(f"<root>{response}</root>")
+    async def parse_response(self, question, answer: str, memories=[]) -> dict:
+        root = ET.fromstring(f"{answer}")
         response = root.find("response")
         if response is not None:
-            response = response.text
-        if memories:
-            return dict(
-                response=response or "",
-                facts=[],
-                request_info=[],
-                memories=memories,
-            )
+            response = "".join([t for t in response.itertext()])
 
         # Find all knowledge triplets
         triplets = root.findall("triplet")
@@ -70,21 +62,21 @@ class SalmanAI:
             for triplet in triplets
         ]
 
-        # Find all requests for knowledge
-        request_info = [n.text for n in root.findall("request_info")]
-
-        memories = set([])
-        for info in request_info:
-            memories.update(get_facts_for_subject(info))
-        # Convert to list to make it JSON serializable
-        memories = list(memories)
-
-        if memories:
-            return await self.chat(question, memories=memories)
+        agent_steps = root.find("agents")
+        if agent_steps:
+            kb_search = agent_steps.findall("kb_search")
+            kb_subjects = [search.text for search in kb_search]
+            internet_search = agent_steps.findall("internet_search")
+            internet_subjects = [search.text for search in internet_search]
+            agent_steps = {
+                "kb_search": kb_subjects,
+                "internet_search": internet_subjects,
+            }
 
         return dict(
             response=response or "",
             facts=facts,
-            request_info=request_info,
             memories=memories,
+            answer=answer,
+            agent_steps=agent_steps,
         )
