@@ -30,26 +30,29 @@ class SalmanAI:
         else:
             return await self.client.acompletion(**kwargs)
 
-    async def chat(self, question: str, memories=[]) -> str:
+    async def chat(
+        self, question: str, memories: list[str] = [], history: list[str] = []
+    ) -> str:
         prompt = prompts.CHAT_TEMPLATE.format(
             human=Config.HUMAN,
             question=question,
             memories="\n".join([f"{anthropic.HUMAN_PROMPT}{m}." for m in memories]),
+            history="".join(history),
             HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
             AI_PROMPT=anthropic.AI_PROMPT,
             datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
-
+        print(prompt)
         response = await self.completion(prompt=prompt, stream=False)
         return await self.parse_response(
             question, response.get("completion"), memories=memories
         )
 
-    async def parse_response(self, question, answer: str, memories=[]) -> dict:
-        root = ET.fromstring(f"{answer}")
-        response = root.find("response")
-        if response is not None:
-            response = "".join([t for t in response.itertext()])
+    async def parse_response(self, question, response: str, memories=[]) -> dict:
+        root = ET.fromstring(f"{response}")
+        text_response = root.find("response")
+        if text_response is not None:
+            text_response = "".join([t for t in text_response.itertext()])
 
         # Find all knowledge triplets
         triplets = root.findall("triplet")
@@ -74,9 +77,9 @@ class SalmanAI:
             }
 
         return dict(
-            response=response or "",
+            text_response=text_response or "",
             facts=facts,
             memories=memories,
-            answer=answer,
+            response=response,
             agent_steps=agent_steps,
         )

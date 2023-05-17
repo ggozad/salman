@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+from anthropic import HUMAN_PROMPT, AI_PROMPT
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.widgets import Footer, Header, Input
@@ -19,42 +20,41 @@ class Salman(App):
         ("d", "toggle_dark", "Toggle dark mode"),
         ("l", "toggle_log", "Show/Hide debug log"),
     ]
-
+    history: list[str] = []
     assistant = SalmanAI()
 
     async def get_llm_reponse(self, text: str) -> str:
         """Get a response from the LLM chain."""
         await asyncio.sleep(0.1)
 
-        response = await self.assistant.chat(text)
+        response = await self.assistant.chat(text, history=self.history)
+        self.history.append(f"{HUMAN_PROMPT}{text}")
+        self.history.append(f'{AI_PROMPT}{response.get("response")}')
         self.write_log(json.dumps(response), format="json")
         for fact in response.get("facts", []):
-            print(fact)
-            try:
-                item = FactItem(fact)
-                container = self.query_one("#container")
-                container.mount(item)
-                item.scroll_visible()
-            except Exception as e:
-                print(e)
-        if response.get("response"):
-            item = ChatItem(text=response.get("response"), author=Author.SALMAN)
+            item = FactItem(fact)
             container = self.query_one("#container")
             container.mount(item)
             item.scroll_visible()
+        if response.get("text_response"):
+            item = ChatItem(text=response.get("text_response"), author=Author.SALMAN)
+            container = self.query_one("#container")
+            container.mount(item)
+            item.scroll_visible()
+
         prompt = self.query_one("#promptInput")
         prompt.disabled = False
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Event handler called when an input is submitted."""
         container = self.query_one("#container")
+        asyncio.create_task(self.get_llm_reponse(event.value))
         item = ChatItem(text=event.value, author=Author.USER)
         container.mount(item)
         item.scroll_visible()
         prompt = self.query_one("#promptInput")
         prompt.value = ""
         prompt.disabled = True
-        asyncio.create_task(self.get_llm_reponse(event.value))
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
