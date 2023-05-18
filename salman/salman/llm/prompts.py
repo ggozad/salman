@@ -18,3 +18,17 @@ Your whole response should be enclosed in a <root> tag. If you request informati
 {history}
 {HUMAN_PROMPT} {question}
 {AI_PROMPT}"""
+
+SEARCH_TEMPLATE = """{HUMAN_PROMPT}You are given the title, url and text from one or more web pages. Each page is enclosed in a <page> tag with the following structure:
+<page>
+<title>title</title>
+<url>url</url>
+<text>text</text>
+</page>
+
+
+{pages}
+
+Your task is to find the answer to the following question. If you find the answer in the context of this conversation respond in a <result> tag that includes the <url>, <title> and your answer enclosed in an <answer> tag. The result should be wrapped in a <root> tag. If you cannot find the answer, you should always respond with an emptry <root> tag.:
+Question: {subject}
+{AI_PROMPT}"""

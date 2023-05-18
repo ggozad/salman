@@ -16,7 +16,7 @@ class SalmanAI:
         prompt: str,
         max_tokens_to_sample=256,
         temperature=0.0,
-        stream=True,
+        stream=False,
     ) -> str:
         kwargs = dict(
             prompt=prompt,
@@ -30,25 +30,19 @@ class SalmanAI:
         else:
             return await self.client.acompletion(**kwargs)
 
-    async def chat(
-        self, question: str, memories: list[str] = [], history: list[str] = []
-    ) -> str:
+    async def chat(self, question: str, history: list[str] = []) -> str:
         prompt = prompts.CHAT_TEMPLATE.format(
             human=Config.HUMAN,
             question=question,
-            memories="\n".join([f"{anthropic.HUMAN_PROMPT}{m}." for m in memories]),
             history="".join(history),
             HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
             AI_PROMPT=anthropic.AI_PROMPT,
             datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
-        print(prompt)
-        response = await self.completion(prompt=prompt, stream=False)
-        return await self.parse_response(
-            question, response.get("completion"), memories=memories
-        )
+        response = await self.completion(prompt=prompt)
+        return await self.parse_response(question, response.get("completion"))
 
-    async def parse_response(self, question, response: str, memories=[]) -> dict:
+    async def parse_response(self, question, response: str) -> dict:
         root = ET.fromstring(f"{response}")
         text_response = root.find("response")
         if text_response is not None:
@@ -77,9 +71,32 @@ class SalmanAI:
             }
 
         return dict(
-            text_response=text_response or "",
+            text_response=text_response.strip() or "",
             facts=facts,
-            memories=memories,
             response=response,
             agent_steps=agent_steps,
         )
+
+    async def search(self, subject: str, pages: list[dict]):
+        prompt_text = ""
+        for page in pages:
+            xml = ET.Element("page")
+            ET.SubElement(xml, "title").text = page["title"]
+            ET.SubElement(xml, "url").text = page["url"]
+            ET.SubElement(xml, "text").text = page["text"]
+            prompt_text += ET.tostring(xml).decode("utf-8")
+        prompt = prompts.SEARCH_TEMPLATE.format(
+            subject=subject,
+            pages=prompt_text,
+            HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
+            AI_PROMPT=anthropic.AI_PROMPT,
+        )
+
+        response = await self.completion(prompt)
+        root = ET.fromstring(response.get("completion"))
+        result = root.find("result")
+        if result is not None:
+            url = result.find("url").text
+            title = result.find("title").text
+            answer = result.find("answer").text
+            return dict(url=url, title=title, answer=answer)

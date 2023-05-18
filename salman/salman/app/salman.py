@@ -9,8 +9,10 @@ from textual.widgets import Footer, Header, Input
 from salman.app.chat import Author, ChatItem, FactItem
 from salman.app.debug import DebugLog
 from salman.app.prompt import PromptWidget
-from salman.llm.agents import search_kb
+from salman.llm.agents import search_internet, search_kb
 from salman.llm.anthropic import SalmanAI
+
+SYSTEM_PROMPT = "\n\nSystem:"
 
 
 class Salman(App):
@@ -46,13 +48,50 @@ class Salman(App):
         # See if we need agents
         agent_steps = response.get("agent_steps")
         if agent_steps:
-            kb_search = agent_steps.get("kb_search")
-            kb_facts = "\n".join(search_kb(kb_search))
-            self.history.append(
-                f"{AI_PROMPT}Found the following facts in the knowledge base:\n{kb_facts}"
+            container = self.query_one("#container")
+            info = ChatItem(
+                text="🕵  Searching my knowledge base and the internet…",
+                author=Author.SALMAN,
             )
+            container.mount(info)
+            info.scroll_visible()
+            kb_search = agent_steps.get("kb_search")
+
+            if kb_search:
+                kb_facts = "\n".join(search_kb(kb_search))
+                self.write_log(json.dumps(kb_facts), format="json")
+                if kb_facts:
+                    self.history.append(
+                        f"{SYSTEM_PROMPT}Found the following facts in the knowledge base about {kb_search}:\n{kb_facts}"
+                    )
+                else:
+                    self.history.append(
+                        f"{SYSTEM_PROMPT}No answers found in the knowledge base. Will not look again for {kb_search}."
+                    )
+            internet_search = agent_steps.get("internet_search")
+            if internet_search:
+                search_answer = await search_internet(internet_search)
+                self.write_log(json.dumps(search_answer), format="json")
+                if search_answer:
+                    url = search_answer.get("url")
+                    title = search_answer.get("title")
+                    answer = search_answer.get("answer")
+                    self.history.append(
+                        f"""{SYSTEM_PROMPT}Found the following searching on the internet about {internet_search}:
+                        Website: {title} - {url}
+                        Answer: {answer}"""
+                    )
+                else:
+                    self.history.append(
+                        f"{SYSTEM_PROMPT}No answers found while searching the internet. Will not look again about {internet_search}."
+                    )
             await self.get_llm_reponse(text)
+            info.remove()
+
         else:
+            # There are no things to search, assume we can reset the history,
+            # so we can start a new conversation
+            self.history = []
             prompt = self.query_one("#promptInput")
             prompt.disabled = False
 

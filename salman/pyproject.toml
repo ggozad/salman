@@ -24,6 +24,8 @@ textual = {version = "^0.23.0", extras = ["dev"]}
 neo4j = "^5.8.0"
 pydantic = "^1.10.7"
 spacy = "^3.5.2"
+googlesearch-python = "^1.2.3"
+trafilatura = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pdbpp = "^0.10.3"
