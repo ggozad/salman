@@ -14,7 +14,4 @@ def setup_logging():
 
 
 setup_logging()
-transcription_logger = logging.getLogger("transcription")
-segmentation_logger = logging.getLogger("segmentation")
-cleanup_logger = logging.getLogger("cleanup")
-recorder_logger = logging.getLogger("recorder")
+salman = logging.getLogger("salman")

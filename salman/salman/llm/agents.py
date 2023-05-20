@@ -5,7 +5,7 @@ from trafilatura.settings import DEFAULT_CONFIG
 from salman.graph.triples import get_facts_for_subject
 from salman.llm.anthropic import SalmanAI
 
-DEFAULT_CONFIG["DEFAULT"]["DOWNLOAD_TIMEOUT"] = "2"
+DEFAULT_CONFIG["DEFAULT"]["DOWNLOAD_TIMEOUT"] = "5"
 
 
 def search_kb(subjects: list[str]):

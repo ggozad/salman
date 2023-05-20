@@ -5,6 +5,7 @@ import anthropic
 
 from salman.config import Config
 from salman.llm import prompts
+from salman.logging import salman as logger
 
 
 class SalmanAI:
@@ -14,7 +15,7 @@ class SalmanAI:
     async def completion(
         self,
         prompt: str,
-        max_tokens_to_sample=256,
+        max_tokens_to_sample=512,
         temperature=0.0,
         stream=False,
     ) -> str:
@@ -39,7 +40,10 @@ class SalmanAI:
             AI_PROMPT=anthropic.AI_PROMPT,
             datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
+        logger.debug(f"Chat Prompt:{prompt}")
         response = await self.completion(prompt=prompt)
+        logger.debug(f"Chat Response:{response.get('completion')})")
+
         return await self.parse_response(question, response.get("completion"))
 
     async def parse_response(self, question, response: str) -> dict:
@@ -91,8 +95,9 @@ class SalmanAI:
             HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
             AI_PROMPT=anthropic.AI_PROMPT,
         )
-
+        logger.debug(f"Search Prompt:{prompt}")
         response = await self.completion(prompt)
+        logger.debug(f"Search Response:{response.get('completion')})")
         root = ET.fromstring(response.get("completion"))
         result = root.find("result")
         if result is not None:

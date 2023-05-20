@@ -2,7 +2,7 @@ import asyncio
 
 import pyaudio
 
-from salman.logging import recorder_logger as logger
+from salman.logging import salman as logger
 
 
 class MicRecorder:

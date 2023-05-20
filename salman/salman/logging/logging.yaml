@@ -8,14 +8,13 @@ handlers:
     level: INFO
     formatter: simple
     stream: ext://sys.stdout
+  textual:
+    class: textual.logging.TextualHandler
+    level: NOTSET
 loggers:
-  transcription:
+  salman:
     level: INFO
-    handlers: [console]
-    propagate: no
-  segmentation:
-    level: INFO
-    handlers: [console]
+    handlers: [textual]
     propagate: no
 
 root:
