@@ -1,16 +1,5 @@
 version: "3.5"
 services:
-  nats:
-    container_name: nats
-    image: nats-salman:dev
-    build: ./nats
-    ports:
-      - "443:443"
-      - "4222:4222"
-      - "6222:6222"
-      - "8222:8222"
-    volumes:
-      - ./volumes/nats:/tmp/nats/jetstream
 
   neo4j:
     container_name: neo4j
@@ -23,53 +12,13 @@ services:
       - ./volumes/neo4j/plugins:/plugins
       - ./config/neo4j.conf:/conf/neo4j.conf
 
-  transcriber:
-    container_name: transcriber
+  salman:
+    container_name: salman
     image: salman:dev
     build: ./salman
     env_file:
       - ./secrets/keys.env
-      - ./config/nats.env
       - ./config/salman.env
-    entrypoint: workers transcription-worker
     volumes:
       - ./volumes/.cache:/home/salman/.cache
 
-  segmenter:
-    container_name: segmenter
-    image: salman:dev
-    build: ./salman
-    env_file:
-      - ./secrets/keys.env
-      - ./config/nats.env
-      - ./config/salman.env
-    entrypoint: workers segmentation-worker
-    volumes:
-      - ./volumes/.cache:/home/salman/.cache
-
-  cleanup:
-    container_name: cleanup
-    image: salman:dev
-    build: ./salman
-    env_file:
-      - ./secrets/keys.env
-      - ./config/nats.env
-      - ./config/salman.env
-    entrypoint: workers cleanup-worker
-    volumes:
-      - ./volumes/.cache:/home/salman/.cache
-
-  # frontend:
-  #   container_name: frontend
-  #   image: salman-frontend:dev
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: docker/Dockerfile
-  #   env_file:
-  #     - ./config/nats.env
-  #   volumes:
-  #     - ./frontend:/app
-  #     - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/npm:/home/node/.npm
-  #   restart: always
-  #   ports:
-  #     - 3000:3000

@@ -6,7 +6,7 @@ from salman.logging import recorder_logger as logger
 
 
 class MicRecorder:
-    def __init__(self, rate=16384, frames_per_buffer=4 * 16384):
+    def __init__(self, rate=16384, frames_per_buffer=1024):
         self.rate = rate
         self.frames_per_buffer = frames_per_buffer
         self.queue = asyncio.Queue()

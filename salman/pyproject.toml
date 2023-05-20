@@ -10,15 +10,7 @@ python = "^3.9"
 python-dotenv = "^1.0.0"
 anthropic = "^0.2.6"
 google-search-results = "^2.4.2"
-llvmlite = "^0.39.1"
-torch = "1.13.1"
-numba = "^0.56.4"
-torchaudio = "0.13.1"
 openai-whisper = {git = "https://github.com/openai/whisper.git"}
-pydub = "^0.25.1"
-hmmlearn = {git = "https://github.com/hmmlearn/hmmlearn.git"}
-pyannote-audio = "^2.1.1"
-nats-py = "^2.2.0"
 pyaudio = "^0.2.13"
 textual = {version = "^0.23.0", extras = ["dev"]}
 neo4j = "^5.8.0"
@@ -26,6 +18,7 @@ pydantic = "^1.10.7"
 spacy = "^3.5.2"
 googlesearch-python = "^1.2.3"
 trafilatura = "^1.6.0"
+pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
 pdbpp = "^0.10.3"

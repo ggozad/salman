@@ -19,8 +19,6 @@ def _parse_bool(val: Union[str, bool]) -> bool:
 class AppConfig:
     ENV: str = "development"
     ANTHROPIC_API_KEY: str
-    NATS_URL: str = "localhost"
-    VOICE_STREAM: str = "voice"
     HUMAN: str
     NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_DATABASE: str = "salman"

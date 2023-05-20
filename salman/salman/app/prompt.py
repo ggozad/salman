@@ -1,75 +1,53 @@
 import asyncio
-import json
-import uuid
+import tempfile
+import wave
 
-from pydub import AudioSegment
+import whisper
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.reactive import reactive
 from textual.widgets import Button, Input, Static
 
-from salman.config import Config
-from salman.nats import Session
-from salman.voice.recorder import MicRecorder
-from salman.workers.voice import end_recording, post_blob, start_recording
+from salman.voice import MicRecorder
 
 
 class PromptWidget(Static):
     id = "prompt"
-    uid = ""
     is_recording = False
     text = reactive("")
+    blobs: list[bytes] = []
 
-    async def on_mount(self) -> None:
-        self.nats = Session(Config.NATS_URL)
-        await self.nats.start()
+    def on_mount(self):
+        self.whisper_model = whisper.load_model("base")
 
-    async def _record_and_transcribe(self):
-        count = 0
+    async def _record(self):
         with MicRecorder() as recorder:
             async for blob, _ in recorder:
-                audio_segment = AudioSegment(
-                    blob, sample_width=2, channels=1, frame_rate=16384
-                )
-                await post_blob(
-                    self.uid, count, audio_segment.export(format="mp4").read()
-                )
-                count += 1
-                await asyncio.sleep(0.01)
+                self.blobs.append(blob)
+                await asyncio.sleep(0.1)
 
     async def start(self):
-        async def on_transcript(msg):
-            text = json.loads(msg.data.decode()).get("text")
-            self.text = self.text + text
-            input = self.query_one("#promptInput")
-            input.value = self.text
-
-            await msg.ack()
-
-        async def on_transcription_finished(self, msg):
-            await self._trancript_sub.unsubscribe()
-            await self._trancription_finished_sub.unsubscribe()
-            await msg.ack()
-
-        self.uid = uuid.uuid4().hex
-        self._trancript_sub = await self.nats.subscribe(
-            Config.VOICE_STREAM, f"transcripts.{self.uid}.*", on_transcript
-        )
-        self._trancription_finished_sub = await self.nats.subscribe(
-            Config.VOICE_STREAM,
-            f"transcribing.{self.uid}.finished",
-            on_transcription_finished,
-        )
-        await start_recording(self.uid)
-
-        self.rtask = asyncio.create_task(self._record_and_transcribe())
         self.is_recording = True
+        self.rtask = asyncio.create_task(self._record())
 
     async def stop(self):
         self.rtask.cancel()
-        await end_recording(self.uid)
-        self.is_recording = False
+        try:
+            temp_file = tempfile.NamedTemporaryFile(suffix=".wav")
+            with wave.open(temp_file, "wb") as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)
+                wf.setframerate(16384)
+                wf.writeframes(b"".join(self.blobs))
+            transcription = self.whisper_model.transcribe(temp_file.name)
+            self.text = self.text + transcription.get("text")
+            input = self.query_one("#promptInput")
+            input.value = self.text
+            self.is_recording = False
+            self.blobs = []
+        except Exception as e:
+            print(e)
 
     @on(Button.Pressed, "#recordButton")
     async def toggle_recording(self) -> None:
