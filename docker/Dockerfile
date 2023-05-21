@@ -31,9 +31,3 @@ USER salman
 ENV PATH="/app/.venv/bin:$PATH"
 RUN python -m spacy download en_core_web_sm
 CMD ["tail", "-f", "/dev/null"]
-
-
-# RUN poetry build
-# RUN pip install ./dist/salman-0.1.0-py3-none-any.whl
-# RUN python -m spacy download en_core_web_sm
-# CMD ["workers"]

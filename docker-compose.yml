@@ -8,17 +8,18 @@ services:
       - "7474:7474"
       - "7687:7687"
     volumes:
-      - ./volumes/neo4j/data:/data
-      - ./volumes/neo4j/plugins:/plugins
-      - ./config/neo4j.conf:/conf/neo4j.conf
+      - ./docker/volumes/neo4j/data:/data
+      - ./docker/volumes/neo4j/plugins:/plugins
+      - ./docker/config/neo4j.conf:/conf/neo4j.conf
 
   salman:
     container_name: salman
     image: salman:dev
-    build: ./salman
+    build:
+      dockerfile: docker/Dockerfile
     env_file:
-      - ./secrets/keys.env
-      - ./config/salman.env
+      - ./docker/secrets/keys.env
+      - ./docker/config/salman.env
     volumes:
-      - ./volumes/.cache:/home/salman/.cache
+      - ./docker/volumes/.cache:/home/salman/.cache
 
