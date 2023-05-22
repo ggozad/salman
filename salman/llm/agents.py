@@ -4,6 +4,7 @@ from trafilatura.settings import DEFAULT_CONFIG
 
 from salman.graph.triples import get_facts_for_subject
 from salman.llm.anthropic import SalmanAI
+from salman.logging import salman as logger
 
 DEFAULT_CONFIG["DEFAULT"]["DOWNLOAD_TIMEOUT"] = "5"
 
@@ -14,6 +15,7 @@ def search_kb(subjects: list[str]):
         memories.update(get_facts_for_subject(subject))
     # Convert to list to make it JSON serializable
     memories = list(memories)
+    logger.debug(f"KB search on {subjects} results: {memories}")
     return memories
 
 

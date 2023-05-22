@@ -78,7 +78,7 @@ class Node(BaseModel):
             for token in tokens:
                 records = neo.query(
                     """
-                    MATCH (s)-[p]->(o) WHERE s.name CONTAINS $name
+                    MATCH (s)-[p]->(o) WHERE s.name CONTAINS $name OR o.name CONTAINS $name
                     RETURN s,p,o""",
                     {"name": token},
                 )
