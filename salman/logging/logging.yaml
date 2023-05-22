@@ -13,7 +13,7 @@ handlers:
     level: NOTSET
 loggers:
   salman:
-    level: INFO
+    level: DEBUG
     handlers: [textual]
     propagate: no
 

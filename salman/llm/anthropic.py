@@ -1,3 +1,4 @@
+import asyncio
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -8,9 +9,19 @@ from salman.llm import prompts
 from salman.logging import salman as logger
 
 
+def handle_exception(loop, context):
+    # context["message"] will always be there; but context["exception"] may not
+    msg = context.get("exception", context["message"])
+    logger.error(f"Caught exception: {msg}")
+
+
 class SalmanAI:
     def __init__(self):
         self.client = anthropic.Client(api_key=Config.ANTHROPIC_API_KEY)
+
+    def on_mount(self):
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(handle_exception)
 
     async def completion(
         self,
@@ -26,10 +37,13 @@ class SalmanAI:
             model="claude-v1",
             temperature=temperature,
         )
+        logger.debug(f"Sending prompt:{prompt}")
         if stream:
-            return await self.client.acompletion_stream(**kwargs, stream=stream)
+            response = await self.client.acompletion_stream(**kwargs, stream=stream)
         else:
-            return await self.client.acompletion(**kwargs)
+            response = await self.client.acompletion(**kwargs)
+        logger.debug(f"Received response:{response}")
+        return response
 
     async def chat(self, question: str, history: list[str] = []) -> str:
         prompt = prompts.CHAT_TEMPLATE.format(
@@ -40,10 +54,7 @@ class SalmanAI:
             AI_PROMPT=anthropic.AI_PROMPT,
             datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
-        logger.debug(f"Chat Prompt:{prompt}")
         response = await self.completion(prompt=prompt)
-        logger.debug(f"Chat Response:{response.get('completion')})")
-
         return await self.parse_response(question, response.get("completion"))
 
     async def parse_response(self, question, response: str) -> dict:
@@ -51,7 +62,9 @@ class SalmanAI:
         text_response = root.find("response")
         if text_response is not None:
             text_response = "".join([t for t in text_response.itertext()])
-
+            text_response = text_response.strip()
+        else:
+            text_response = ""
         # Find all knowledge triplets
         triplets = root.findall("triplet")
         facts = [
@@ -62,7 +75,7 @@ class SalmanAI:
             )
             for triplet in triplets
         ]
-
+        print(triplets)
         agent_steps = root.find("agents")
         if agent_steps:
             kb_search = agent_steps.findall("kb_search")
@@ -74,12 +87,14 @@ class SalmanAI:
                 "internet_search": internet_subjects,
             }
 
-        return dict(
-            text_response=text_response.strip() or "",
+        response = dict(
+            text_response=text_response,
             facts=facts,
             response=response,
             agent_steps=agent_steps,
         )
+        logger.debug(f"Parsed response:{response}")
+        return response
 
     async def search(self, subject: str, pages: list[dict]):
         prompt_text = ""
@@ -95,9 +110,7 @@ class SalmanAI:
             HUMAN_PROMPT=anthropic.HUMAN_PROMPT,
             AI_PROMPT=anthropic.AI_PROMPT,
         )
-        logger.debug(f"Search Prompt:{prompt}")
         response = await self.completion(prompt)
-        logger.debug(f"Search Response:{response.get('completion')})")
         root = ET.fromstring(response.get("completion"))
         result = root.find("result")
         if result is not None:
