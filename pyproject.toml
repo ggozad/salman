@@ -19,6 +19,7 @@ spacy = "^3.5.2"
 googlesearch-python = "^1.2.3"
 trafilatura = "^1.6.0"
 pyyaml = "^6.0"
+sentence-transformers = "2.2.1"
 
 [tool.poetry.group.dev.dependencies]
 pdbpp = "^0.10.3"
