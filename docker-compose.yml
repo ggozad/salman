@@ -7,6 +7,8 @@ services:
     ports:
       - "7474:7474"
       - "7687:7687"
+    environment:
+      - NEO4JLABS_PLUGINS=["graph-data-science"]
     volumes:
       - ./docker/volumes/neo4j/data:/data
       - ./docker/volumes/neo4j/plugins:/plugins
