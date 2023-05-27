@@ -1,15 +1,10 @@
 import pytest
 
-from salman.graph.triples import (
-    Node,
-    create_semantic_triple,
-    delete_node,
-)
+from salman.graph.triples import Node, create_semantic_triple
 
 
 @pytest.mark.asyncio
 async def test_node():
-    await delete_node("test_node")
     node = Node(name="test_node")
     assert node.id is None
     await node.save()
@@ -28,16 +23,9 @@ async def test_node():
     assert node.name == "test_node"
     assert "label" in node.labels
 
-    await delete_node("test_node")
-
 
 @pytest.mark.asyncio
 async def test_triples():
-    await delete_node("Test Subject")
-    await delete_node("Test Object #1")
-    await delete_node("Test Object #2")
-    await delete_node("Test Object #3")
-
     # Add a triple, persist it.
     subject, predicate, object = await create_semantic_triple(
         subject=Node(name="Test Subject"),
@@ -76,8 +64,3 @@ async def test_triples():
         ("Test Subject", "knows well", "Test Object #2"),
         ("Test Subject", "wants to learn", "Test Object #3"),
     }
-
-    await delete_node("Test Subject")
-    await delete_node("Test Object #1")
-    await delete_node("Test Object #2")
-    await delete_node("Test Object #3")
