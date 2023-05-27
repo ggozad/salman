@@ -58,7 +58,7 @@ class Salman(App):
             kb_search = agent_steps.get("kb_search")
 
             if kb_search:
-                kb_facts = "\n".join(search_kb(kb_search))
+                kb_facts = "\n".join(await search_kb(kb_search))
                 self.write_log(json.dumps(kb_facts), format="json")
                 if kb_facts:
                     self.history.append(

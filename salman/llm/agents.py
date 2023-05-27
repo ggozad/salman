@@ -9,10 +9,10 @@ from salman.logging import salman as logger
 DEFAULT_CONFIG["DEFAULT"]["DOWNLOAD_TIMEOUT"] = "5"
 
 
-def search_kb(subjects: list[str]):
+async def search_kb(subjects: list[str]):
     memories = set([])
     for subject in subjects:
-        memories.update(get_facts_for_subject(subject))
+        memories.update(await get_facts_for_subject(subject))
     # Convert to list to make it JSON serializable
     memories = list(memories)
     logger.debug(f"KB search on {subjects} results: {memories}")

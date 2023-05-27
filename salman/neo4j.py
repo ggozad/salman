@@ -1,4 +1,4 @@
-from neo4j import GraphDatabase
+from neo4j import AsyncGraphDatabase, GraphDatabase
 from pydantic import BaseModel
 
 from salman.config import Config
@@ -19,27 +19,41 @@ class Neo4jSession:
         if self._driver is not None:
             self._driver.close()
 
+    async def __aenter__(self):
+        self._driver = AsyncGraphDatabase.driver(
+            self._uri, auth=(self._user, self._pwd)
+        )
+        return self
+
+    async def __aexit__(self, *args):
+        if self._driver is not None:
+            await self._driver.close()
+
+    async def aquery(self, query, parameters=None):
+        records, summary, keys = await self._driver.execute_query(query, parameters)
+        return records
+
     def query(self, query, parameters=None):
         records, summary, keys = self._driver.execute_query(query, parameters)
         return records
 
 
-def create_node(model: BaseModel):
-    with Neo4jSession() as neo:
+async def create_node(model: BaseModel):
+    async with Neo4jSession() as neo:
         params = model.dict()
         labels = ":".join(model.labels)
 
-        return neo.query(
+        return await neo.query(
             f"CREATE (n:{labels} $params) RETURN id(n) AS id",
             {"params": params},
         )[0].get("id")
 
 
-def create_relationship(
+async def create_relationship(
     start_node_id: int, end_node_id: int, relationship_type: str, params: dict = {}
 ) -> None:
-    with Neo4jSession() as neo:
-        return neo.query(
+    async with Neo4jSession() as neo:
+        return await neo.aquery(
             f"""
             MATCH (a), (b)
             WHERE id(a) = $start_node_id AND id(b) = $end_node_id

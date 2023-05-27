@@ -35,13 +35,13 @@ class Node(BaseModel):
                 self.labels = set(records[0]["o"].labels)
                 self.id = records[0]["id(o)"]
 
-    def save(self):
-        with Neo4jSession() as neo:
+    async def save(self):
+        async with Neo4jSession() as neo:
             labels = ":".join(self.labels)
             if labels:
                 labels = ":" + labels
             if self.id:
-                res = neo.query(
+                res = await neo.aquery(
                     f"""
                     MATCH (n)
                     WHERE id(n) = $id
@@ -50,7 +50,7 @@ class Node(BaseModel):
                     parameters={"id": self.id},
                 )
             else:
-                res = neo.query(
+                res = await neo.aquery(
                     f"""
                     CREATE (n{labels})
                     SET n.name = $name
@@ -59,24 +59,24 @@ class Node(BaseModel):
                 )
             self.id = res[0]["id(n)"]
 
-    def add_relationship(self, predicate: str, obj: "Node"):
+    async def add_relationship(self, predicate: str, obj: "Node"):
         if obj.id is None:
-            obj.save()
+            await obj.save()
 
-        create_relationship(
+        await create_relationship(
             start_node_id=self.id,
             end_node_id=obj.id,
             relationship_type=predicate_to_label(predicate),
             params={"name": predicate},
         )
 
-    def get_triples(self):
+    async def get_triples(self):
         doc = _nlp(self.name)
         tokens = [token.text for token in doc if token.pos_ in ["NOUN", "PROPN", "ADJ"]]
         result = set([])
-        with Neo4jSession() as neo:
+        async with Neo4jSession() as neo:
             for token in tokens:
-                records = neo.query(
+                records = await neo.aquery(
                     """
                     MATCH (s)-[p]->(o) WHERE s.name CONTAINS $name OR o.name CONTAINS $name
                     RETURN s,p,o""",
@@ -95,18 +95,18 @@ class Node(BaseModel):
         return result
 
 
-def create_semantic_triple(
+async def create_semantic_triple(
     subject: Node,
     predicate: str,
     obj: Node,
 ) -> None:
     if subject.id is None:
-        subject.save()
+        await subject.save()
 
     if obj.id is None:
-        obj.save()
+        await obj.save()
 
-    create_relationship(
+    await create_relationship(
         start_node_id=subject.id,
         end_node_id=obj.id,
         relationship_type=predicate_to_label(predicate),
@@ -115,9 +115,9 @@ def create_semantic_triple(
     return (subject, predicate, obj)
 
 
-def delete_node(name: str):
-    with Neo4jSession() as neo:
-        neo.query(
+async def delete_node(name: str):
+    async with Neo4jSession() as neo:
+        await neo.aquery(
             """
             MATCH (n)
             WHERE n.name = $name
@@ -126,14 +126,14 @@ def delete_node(name: str):
         )
 
 
-def get_facts_for_subject(subject: str) -> set[str]:
+async def get_facts_for_subject(subject: str) -> set[str]:
     doc = _nlp(subject)
     tokens = [token.text for token in doc if token.pos_ in ["NOUN", "PROPN", "ADJ"]]
     results = set([])
     facts = set([])
-    with Neo4jSession() as neo:
+    async with Neo4jSession() as neo:
         for token in tokens:
-            records = neo.query(
+            records = await neo.aquery(
                 """
                     MATCH (s)-[p]-(o)
                     WHERE s.name CONTAINS $name
@@ -143,6 +143,6 @@ def get_facts_for_subject(subject: str) -> set[str]:
             results.update(records)
     for record in results:
         node = Node(name=record["s"]["name"])
-        for triple in node.get_triples():
+        for triple in await node.get_triples():
             facts.add(" ".join(triple))
     return facts

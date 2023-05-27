@@ -51,7 +51,7 @@ class FactItem(Static):
     @on(Button.Pressed, ".rememberButton")
     async def remember(self) -> None:
         # Persist the fact in the database
-        create_semantic_triple(
+        await create_semantic_triple(
             Node(name=self.subject),
             self.predicate,
             Node(name=self.object),

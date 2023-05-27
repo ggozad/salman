@@ -1,3 +1,5 @@
+import pytest
+
 from salman.graph.triples import (
     Node,
     create_semantic_triple,
@@ -5,11 +7,12 @@ from salman.graph.triples import (
 )
 
 
-def test_node():
-    delete_node("test_node")
+@pytest.mark.asyncio
+async def test_node():
+    await delete_node("test_node")
     node = Node(name="test_node")
     assert node.id is None
-    node.save()
+    await node.save()
     assert node.id is not None
 
     node = Node(name="test_node")
@@ -18,24 +21,25 @@ def test_node():
     assert node.labels == set(["Node"])
 
     node.labels.add("label")
-    node.save()
+    await node.save()
 
     node = Node(name="test_node")
     assert node.id is not None
     assert node.name == "test_node"
     assert "label" in node.labels
 
-    delete_node("test_node")
+    await delete_node("test_node")
 
 
-def test_triples():
-    delete_node("Test Subject")
-    delete_node("Test Object #1")
-    delete_node("Test Object #2")
-    delete_node("Test Object #3")
+@pytest.mark.asyncio
+async def test_triples():
+    await delete_node("Test Subject")
+    await delete_node("Test Object #1")
+    await delete_node("Test Object #2")
+    await delete_node("Test Object #3")
 
     # Add a triple, persist it.
-    subject, predicate, object = create_semantic_triple(
+    subject, predicate, object = await create_semantic_triple(
         subject=Node(name="Test Subject"),
         predicate="knows",
         obj=Node(name="Test Object #1"),
@@ -51,29 +55,29 @@ def test_triples():
     assert subject.id is not None
 
     # Add another relationship, persist it.
-    subject.add_relationship("knows well", Node(name="Test Object #2"))
-    triples = subject.get_triples()
+    await subject.add_relationship("knows well", Node(name="Test Object #2"))
+    triples = await subject.get_triples()
     assert triples == {
         ("Test Subject", "knows", "Test Object #1"),
         ("Test Subject", "knows well", "Test Object #2"),
     }
 
     # Add another triple with new objects, persist it.
-    subject, predicate, object = create_semantic_triple(
+    subject, predicate, object = await create_semantic_triple(
         subject=Node(name="Test Subject"),
         predicate="wants to learn",
         obj=Node(name="Test Object #3"),
     )
 
     # Retrieve the triples.
-    triples = subject.get_triples()
+    triples = await subject.get_triples()
     assert triples == {
         ("Test Subject", "knows", "Test Object #1"),
         ("Test Subject", "knows well", "Test Object #2"),
         ("Test Subject", "wants to learn", "Test Object #3"),
     }
 
-    delete_node("Test Subject")
-    delete_node("Test Object #1")
-    delete_node("Test Object #2")
-    delete_node("Test Object #3")
+    await delete_node("Test Subject")
+    await delete_node("Test Object #1")
+    await delete_node("Test Object #2")
+    await delete_node("Test Object #3")
