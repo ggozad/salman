@@ -1,9 +1,38 @@
+import asyncio
+
 import spacy
 from pydantic import BaseModel
+from sentence_transformers import SentenceTransformer
 
+from salman.logging import salman as logger
 from salman.neo4j import Neo4jSession, create_relationship
 
+_embedding_model: SentenceTransformer | None = None
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+
 _nlp = spacy.load("en_core_web_sm")
+
+
+async def get_embedding_model() -> SentenceTransformer:
+    global _embedding_model
+    if _embedding_model is None:
+        logger.debug(f"Loading {EMBEDDING_MODEL}")
+        try:
+            _embedding_model = SentenceTransformer(EMBEDDING_MODEL)
+            logger.debug(f"Loaded {EMBEDDING_MODEL}")
+        except Exception as e:
+            logger.error(f"Failed to load {EMBEDDING_MODEL}: {e}")
+            raise e
+    return _embedding_model
+
+
+loop = asyncio.get_event_loop()
+loop.create_task(get_embedding_model())
+
+
+async def get_embeddings(text: str):
+    model = await get_embedding_model()
+    return model.encode(text)
 
 
 def predicate_to_label(predicate: str):
@@ -63,35 +92,40 @@ class Node(BaseModel):
         if obj.id is None:
             await obj.save()
 
+        fact = f"{self.name} {predicate} {obj.name}"
+        fact_embeddings = await get_embeddings(fact)
+
         await create_relationship(
             start_node_id=self.id,
             end_node_id=obj.id,
             relationship_type=predicate_to_label(predicate),
-            params={"name": predicate},
+            params={
+                "predicate": predicate,
+                "fact": fact,
+                "fact_embeddings": fact_embeddings.tolist(),
+            },
         )
 
     async def get_triples(self):
-        doc = _nlp(self.name)
-        tokens = [token.text for token in doc if token.pos_ in ["NOUN", "PROPN", "ADJ"]]
         result = set([])
         async with Neo4jSession() as neo:
-            for token in tokens:
-                records = await neo.aquery(
-                    """
-                    MATCH (s)-[p]->(o) WHERE s.name CONTAINS $name OR o.name CONTAINS $name
+            records = await neo.aquery(
+                """
+                    MATCH (s)-[p]->(o) WHERE id(s) = $id OR id(o) = $id
                     RETURN s,p,o""",
-                    {"name": token},
-                )
-                result.update(
-                    [
-                        (
-                            record["s"]["name"],
-                            record["p"]["name"],
-                            record["o"]["name"],
-                        )
-                        for record in records
-                    ]
-                )
+                {"id": self.id},
+            )
+
+            result.update(
+                [
+                    (
+                        record["s"]["name"],
+                        record["p"]["predicate"],
+                        record["o"]["name"],
+                    )
+                    for record in records
+                ]
+            )
         return result
 
 
@@ -99,19 +133,27 @@ async def create_semantic_triple(
     subject: Node,
     predicate: str,
     obj: Node,
-) -> None:
+) -> tuple[Node, str, Node]:
     if subject.id is None:
         await subject.save()
 
     if obj.id is None:
         await obj.save()
 
+    fact = f"{subject.name} {predicate} {obj.name}"
+    fact_embeddings = await get_embeddings(fact)
+
     await create_relationship(
         start_node_id=subject.id,
         end_node_id=obj.id,
         relationship_type=predicate_to_label(predicate),
-        params={"name": predicate},
+        params={
+            "predicate": predicate,
+            "fact": fact,
+            "fact_embeddings": fact_embeddings.tolist(),
+        },
     )
+
     return (subject, predicate, obj)
 
 
