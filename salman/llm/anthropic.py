@@ -75,7 +75,7 @@ class SalmanAI:
             )
             for triplet in triplets
         ]
-        print(triplets)
+
         agent_steps = root.find("agents")
         if agent_steps:
             kb_search = agent_steps.findall("kb_search")

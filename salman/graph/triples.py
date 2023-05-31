@@ -1,6 +1,5 @@
 import asyncio
 
-import spacy
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 
@@ -9,8 +8,6 @@ from salman.neo4j import Neo4jSession, create_relationship
 
 _embedding_model: SentenceTransformer | None = None
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-
-_nlp = spacy.load("en_core_web_sm")
 
 
 async def get_embedding_model() -> SentenceTransformer:
@@ -33,16 +30,6 @@ loop.create_task(get_embedding_model())
 async def get_embeddings(text: str):
     model = await get_embedding_model()
     return model.encode(text)
-
-
-def predicate_to_label(predicate: str):
-    """
-    Return the predicate as a label, using only A-Z characters and underscores.
-    """
-    predicate = predicate.replace(" ", "_")
-    return "".join(
-        [char for char in predicate.upper() if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ_"]
-    )
 
 
 class Node(BaseModel):
@@ -98,7 +85,7 @@ class Node(BaseModel):
         await create_relationship(
             start_node_id=self.id,
             end_node_id=obj.id,
-            relationship_type=predicate_to_label(predicate),
+            relationship_label="PREDICATE",
             params={
                 "predicate": predicate,
                 "fact": fact,
@@ -142,11 +129,10 @@ async def create_semantic_triple(
 
     fact = f"{subject.name} {predicate} {obj.name}"
     fact_embeddings = await get_embeddings(fact)
-
     await create_relationship(
         start_node_id=subject.id,
         end_node_id=obj.id,
-        relationship_type=predicate_to_label(predicate),
+        relationship_label="PREDICATE",
         params={
             "predicate": predicate,
             "fact": fact,
@@ -169,22 +155,32 @@ async def delete_node(name: str):
 
 
 async def get_facts_for_subject(subject: str) -> set[str]:
-    doc = _nlp(subject)
-    tokens = [token.text for token in doc if token.pos_ in ["NOUN", "PROPN", "ADJ"]]
-    results = set([])
     facts = set([])
+    node = Node(name=subject)
+    for triple in await node.get_triples():
+        facts.add(" ".join(triple))
+    return facts
+
+
+async def search_facts(query: str, limit=5) -> set[str]:
+    facts = []
+    query_embeddings = await get_embeddings(query)
+
+    query = """
+        MATCH (subject)-[predicate:PREDICATE]->(object)
+        WITH subject, predicate, object, 
+        gds.similarity.cosine(predicate.fact_embeddings, $embeddings) AS similarity
+        RETURN subject, predicate, object, similarity
+        ORDER BY similarity DESC LIMIT $limit"""
     async with Neo4jSession() as neo:
-        for token in tokens:
-            records = await neo.aquery(
-                """
-                    MATCH (s)-[p]-(o)
-                    WHERE s.name CONTAINS $name
-                    RETURN s,p,o, id(s)""",
-                {"name": token},
+        records = await neo.aquery(
+            query, {"embeddings": query_embeddings.tolist(), "limit": limit}
+        )
+        facts = [
+            (
+                record["predicate"]["fact"],
+                record["similarity"],
             )
-            results.update(records)
-    for record in results:
-        node = Node(name=record["s"]["name"])
-        for triple in await node.get_triples():
-            facts.add(" ".join(triple))
+            for record in records
+        ]
     return facts

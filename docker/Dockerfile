@@ -29,5 +29,4 @@ RUN chown -R salman /app
 
 USER salman
 ENV PATH="/app/.venv/bin:$PATH"
-RUN python -m spacy download en_core_web_sm
 CMD ["tail", "-f", "/dev/null"]

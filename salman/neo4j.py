@@ -49,16 +49,31 @@ async def create_node(model: BaseModel):
         )[0].get("id")
 
 
+def predicate_to_label(predicate: str):
+    """
+    Return the predicate as a label, using only A-Z characters and underscores.
+    """
+    predicate = predicate.replace(" ", "_")
+    return "".join(
+        [char for char in predicate.upper() if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ_"]
+    )
+
+
 async def create_relationship(
-    start_node_id: int, end_node_id: int, relationship_type: str, params: dict = {}
+    start_node_id: int,
+    end_node_id: int,
+    relationship_label: str,
+    params: dict = {},
 ) -> None:
+    relationship_label = predicate_to_label(relationship_label)
+
     async with Neo4jSession() as neo:
         return await neo.aquery(
             f"""
             MATCH (a), (b)
             WHERE id(a) = $start_node_id AND id(b) = $end_node_id
             WITH a, b
-            CREATE (a)-[:{relationship_type} $params]->(b)
+            CREATE (a)-[:{relationship_label} $params]->(b)
             """,
             {
                 "start_node_id": start_node_id,

@@ -16,7 +16,7 @@ Your whole response should be enclosed in a <root> tag. If you request informati
 </root>
 {AI_PROMPT}I understand, I will pay attention if you give me any facts to remember and I will answer your questions to the best of my ability. If I do not know the answer I will use the knowledge base for information that seems related to you using <kb_search> tags or the internet search engine for general questions using <internet_search> tags.
 {history}
-{HUMAN_PROMPT} {question}
+{HUMAN_PROMPT}{question}
 {AI_PROMPT}"""
 
 SEARCH_TEMPLATE = """{HUMAN_PROMPT}You are given the title, url and text from one or more web pages. Each page is enclosed in a <page> tag with the following structure:

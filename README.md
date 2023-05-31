@@ -7,12 +7,12 @@ Salman is a terminal-based personal AI assistant written in python. It's not int
 Features:
 - Runs as a terminal app.
 - Can be controlled by voice commands through [whisper](https://github.com/openai/whisper)
-- Can store "facts" it learns about you in a local graph database using [neo4j](https://neo4j.com)
+- Can store "facts" it learns about you in a local graph database using [neo4j](https://neo4j.com).
 - Searches the internet for things it does not know.
 - Uses as few calls for LLM inference as I could make it do to reduce LLM costs.
 
 Weird choices:
-- Salman uses a graph db to store its knowledge. That's because I liked the idea of being able to visualize the knowledge graph. It would be a lot easier and more effective to use a vector db for semantic searches.
+- Salman uses a graph db to store its knowledge. That's because I liked the idea of being able to visualize the knowledge graph and intend to inject more structured information in the knowledge graph in the future. It would be a lot easier and more effective to use a vector db for semantic searches. For the time being, sentence embeddings are stored in the graph to allow for semantic searches.
 - I use Anthropic AI's Claude as an LLM. That's mostly because I don't like OpenAI as a company. If you use OpenAI, please feel free to submit a PR. It should be about changing a few lines. When there is a good open source alternative, I will switch to it.
 
 ## Installation
