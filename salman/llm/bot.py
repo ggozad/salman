@@ -21,10 +21,10 @@ class SalmanAI:
             datetime=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
         response = await self.llm.completion(prompt=prompt)
-        return await self.parse_response(question, response.get("completion"))
+        return await self.parse_response(response.get("completion"))
 
-    async def parse_response(self, question, response: str) -> dict:
-        root = ET.fromstring(f"{response}")
+    async def parse_response(self, response: str) -> dict:
+        root = ET.fromstring(f"<root>{response}</root>")
         text_response = root.find("response")
         if text_response is not None:
             text_response = "".join([t for t in text_response.itertext()])
@@ -42,16 +42,18 @@ class SalmanAI:
             for triplet in triplets
         ]
 
-        agent_steps = root.find("agents")
-        if agent_steps:
-            kb_search = agent_steps.findall("kb_search")
+        kb_search = root.findall("kb_search")
+        internet_search = root.findall("internet_search")
+
+        if kb_search or internet_search:
             kb_subjects = [search.text for search in kb_search]
-            internet_search = agent_steps.findall("internet_search")
             internet_subjects = [search.text for search in internet_search]
             agent_steps = {
                 "kb_search": kb_subjects,
                 "internet_search": internet_subjects,
             }
+        else:
+            agent_steps = None
 
         response = dict(
             text_response=text_response,

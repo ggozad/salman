@@ -73,11 +73,11 @@ class Salman(App):
                 self.write_log(json.dumps(kb_facts), format="json")
                 if kb_facts:
                     self.history.append(
-                        f"{SYSTEM_PROMPT}Found the following facts in the knowledge base about {kb_search}:\n{kb_facts}"
+                        f"{AI_PROMPT} Found the following facts in the knowledge base possibly realted to {kb_search}:\n{kb_facts}"
                     )
                 else:
                     self.history.append(
-                        f"{SYSTEM_PROMPT}No answers found in the knowledge base. Will not look again for {kb_search}."
+                        f"{AI_PROMPT} No answers found in the knowledge base. Will not look again for {kb_search}."
                     )
             internet_search = agent_steps.get("internet_search")
             if internet_search:
@@ -88,13 +88,13 @@ class Salman(App):
                     title = search_answer.get("title")
                     answer = search_answer.get("answer")
                     self.history.append(
-                        f"""{SYSTEM_PROMPT}Found the following searching on the internet about {internet_search}:
+                        f"""{AI_PROMPT} Found the following searching on the internet about {internet_search}:
                         Website: {title} - {url}
                         Answer: {answer}"""
                     )
                 else:
                     self.history.append(
-                        f"{SYSTEM_PROMPT}No answers found while searching the internet. Will not look again about {internet_search}."
+                        f"{AI_PROMPT} No answers found while searching the internet. Will not look again about {internet_search}."
                     )
             await self.get_llm_reponse(text)
             info.remove()

@@ -7,13 +7,16 @@ from salman.llm.bot import SalmanAI
 from salman.logging import salman as logger
 
 DEFAULT_CONFIG["DEFAULT"]["DOWNLOAD_TIMEOUT"] = "5"
+SIMILARITY_THRESHOLD = 0.3
 
 
 async def search_kb(subjects: list[str]):
     memories = set([])
     for subject in subjects:
         search_results = await search_facts(subject)
-        memories.update([result for result, _ in search_results])
+        memories.update(
+            [result for result, score in search_results if score > SIMILARITY_THRESHOLD]
+        )
     # Convert to list to make it JSON serializable
     memories = list(memories)
     logger.debug(f"KB search on {subjects} results: {memories}")
