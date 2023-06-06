@@ -3,7 +3,7 @@ import trafilatura
 from trafilatura.settings import DEFAULT_CONFIG
 
 from salman.graph.triples import search_facts
-from salman.llm.anthropic import SalmanAI
+from salman.llm.bot import SalmanAI
 from salman.logging import salman as logger
 
 DEFAULT_CONFIG["DEFAULT"]["DOWNLOAD_TIMEOUT"] = "5"

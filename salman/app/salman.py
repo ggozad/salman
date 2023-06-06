@@ -10,9 +10,16 @@ from salman.app.chat import Author, ChatItem, FactItem
 from salman.app.debug import DebugLog
 from salman.app.prompt import PromptWidget
 from salman.llm.agents import search_internet, search_kb
-from salman.llm.anthropic import SalmanAI
+from salman.llm.bot import SalmanAI
+from salman.logging import salman as logger
 
 SYSTEM_PROMPT = "\n\nSystem:"
+
+
+def handle_exception(loop, context):
+    # context["message"] will always be there; but context["exception"] may not
+    msg = context.get("exception", context["message"])
+    logger.error(f"Caught exception: {msg}")
 
 
 class Salman(App):
@@ -25,6 +32,10 @@ class Salman(App):
     ]
     history: list[str] = []
     assistant = SalmanAI()
+
+    def on_mount(self):
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(handle_exception)
 
     async def get_llm_reponse(self, text: str) -> str:
         """Get a response from the LLM chain."""
