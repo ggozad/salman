@@ -33,14 +33,19 @@ class SalmanAI:
             text_response = ""
         # Find all knowledge triplets
         triplets = root.findall("triplet")
-        facts = [
-            dict(
-                subject=triplet.find("subject").text,
-                predicate=triplet.find("predicate").text,
-                object=triplet.find("object").text,
-            )
-            for triplet in triplets
-        ]
+
+        facts = []
+        for triplet in triplets:
+            try:
+                facts.append(
+                    dict(
+                        subject=triplet.find("subject").text,
+                        predicate=triplet.find("predicate").text,
+                        object=triplet.find("object").text,
+                    )
+                )
+            except AttributeError:
+                continue
 
         kb_search = root.findall("kb_search")
         internet_search = root.findall("internet_search")
