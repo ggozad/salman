@@ -24,6 +24,8 @@ class AppConfig:
     NEO4J_DATABASE: str = "salman"
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = ""
+    LLAMA_MODEL: str = ""
+    LLM: str = "claude"
 
     """
     Map environment variables to class fields according to these rules:
